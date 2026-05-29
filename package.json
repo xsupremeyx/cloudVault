@@ -5,7 +5,7 @@
   "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start" : "node app.js",
+    "start": "node app.js",
     "dev": "node --watch app.js"
   },
   "repository": {
@@ -15,13 +15,29 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module",
+  "type": "commonjs",
   "bugs": {
     "url": "https://github.com/xsupremeyx/odin-NodeViews/issues"
   },
   "homepage": "https://github.com/xsupremeyx/odin-NodeViews#readme",
   "dependencies": {
-    "ejs": "^5.0.1",
-    "express": "^5.2.1"
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "@quixo3/prisma-session-store": "^3.1.19",
+    "@supabase/supabase-js": "^2.106.2",
+    "bcryptjs": "^3.0.3",
+    "connect-flash": "^0.1.1",
+    "dotenv": "^17.4.2",
+    "ejs": "^5.0.2",
+    "express": "^5.2.1",
+    "express-session": "^1.19.0",
+    "express-validator": "^7.3.2",
+    "multer": "^2.1.1",
+    "passport": "^0.7.0",
+    "passport-local": "^1.0.0",
+    "pg": "^8.21.0"
+  },
+  "devDependencies": {
+    "prisma": "^7.8.0"
   }
 }

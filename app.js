@@ -1,3 +1,5 @@
+const dotenv = require("dotenv");
+dotenv.config();
 const express = require("express");
 const app = express();
 const path = require("node:path");
@@ -7,6 +9,7 @@ app.set("view engine", "ejs");
 
 const assetsPath = path.join(__dirname, "public");
 app.use(express.static(assetsPath));
+app.use(express.urlencoded({ extended: true }));
 
 // import routes
 const indexRouter = require("./routes/indexRouter");
@@ -25,11 +28,11 @@ app.use((error, req, res, next) => {
     res.status(500).send("Internal Server Error");
 })
 
-const PATH = process.env.PORT || 3000
-app.listen(PATH, (err) => {
+const PORT = process.env.PORT || 3000
+app.listen(PORT, (err) => {
     if(err){
         console.error("Error starting server:", err);
         return;
     }
-    console.log(`Server is running on port ${PATH}`);
+    console.log(`Server is running on port ${PORT}`);
 })
