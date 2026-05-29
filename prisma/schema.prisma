@@ -54,3 +54,12 @@ model Share {
   folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
   folderId  Int      @unique
 }
+
+model Session {
+  id        String   @id
+  sid       String   @unique
+  data      String
+  expiresAt DateTime
+
+  @@map("session")
+}

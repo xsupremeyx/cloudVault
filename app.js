@@ -1,15 +1,43 @@
 const dotenv = require("dotenv");
 dotenv.config();
+
 const express = require("express");
-const app = express();
 const path = require("node:path");
 
+// import session
+const session = require("express-session");
+const { PrismaSessionStore } = require("@quixo3/prisma-session-store");
+
+// prisma 
+const { prisma } = require("./lib/prisma");
+
+// app declare
+const app = express();
+
+// add view engine of ejs
 app.set("views", path.join(__dirname,"views"));
 app.set("view engine", "ejs");
 
+// configure public assets and form parsing
 const assetsPath = path.join(__dirname, "public");
 app.use(express.static(assetsPath));
 app.use(express.urlencoded({ extended: true }));
+
+// session middleware
+app.use(
+    session({
+        store: new PrismaSessionStore(prisma, {
+            checkPeriod: 2*60*1000,
+            dbRecordIdIsSessionId: true,
+        }),
+        secret: process.env.SESSION_SECRET,
+        resave: false,
+        saveUninitialized: false,
+        cookie: {
+            maxAge: 30*24*60*60*1000, // 30 days
+        },
+    })
+);
 
 // import routes
 const indexRouter = require("./routes/indexRouter");
