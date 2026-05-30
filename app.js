@@ -11,6 +11,9 @@ const { PrismaSessionStore } = require("@quixo3/prisma-session-store");
 // prisma 
 const { prisma } = require("./lib/prisma");
 
+// import passport
+const passport = require("./config/passport");
+
 // app declare
 const app = express();
 
@@ -38,6 +41,10 @@ app.use(
         },
     })
 );
+
+// initialize passport
+app.use(passport.initialize());
+app.use(passport.session());
 
 // import routes
 const indexRouter = require("./routes/indexRouter");

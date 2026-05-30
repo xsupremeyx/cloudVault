@@ -1,5 +1,5 @@
 {
-  "name": "odin-nodeviews",
+  "name": "cloudvault",
   "version": "1.0.0",
   "description": "",
   "main": "app.js",
@@ -10,16 +10,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xsupremeyx/odin-NodeViews.git"
+    "url": "git+https://github.com/xsupremeyx/cloudVault.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "type": "commonjs",
   "bugs": {
-    "url": "https://github.com/xsupremeyx/odin-NodeViews/issues"
+    "url": "https://github.com/xsupremeyx/cloudVault/issues"
   },
-  "homepage": "https://github.com/xsupremeyx/odin-NodeViews#readme",
+  "homepage": "https://github.com/xsupremeyx/cloudVault#readme",
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
