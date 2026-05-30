@@ -1,3 +1,4 @@
+
 function getIndex(req, res, next) {
     try {
         res.render("index");
@@ -7,6 +8,16 @@ function getIndex(req, res, next) {
     }
 }
 
+function getDashboard(req, res, next) {
+    try {
+        res.render("dashboard");
+    }
+    catch (error) {
+        next(error);
+    }
+}
+
 module.exports = {
-    getIndex
+    getIndex,
+    getDashboard,    
 }

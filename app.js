@@ -46,10 +46,18 @@ app.use(
 app.use(passport.initialize());
 app.use(passport.session());
 
+// add user to res.locals for easy access in views
+app.use((req, res, next) => {
+    res.locals.currentUser = req.user;
+    next();
+});
+
 // import routes
 const indexRouter = require("./routes/indexRouter");
+const authRouter = require("./routes/authRouter");
 
 // define routes
+app.use("/", authRouter);
 app.use("/", indexRouter);
 
 // 404 handler

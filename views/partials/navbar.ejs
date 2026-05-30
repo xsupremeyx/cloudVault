@@ -1,0 +1,16 @@
+<nav>
+    <% if (currentUser) { %>
+        <a href="/">Home</a>
+        <a href="/dashboard">Dashboard</a>
+
+        <span>Hello, <%= currentUser.username %></span>
+
+        <form action="/log-out" method="POST" style="display:inline;">
+            <button type="submit">Log Out</button>
+        </form>
+    <% } else { %>
+        <a href="/">Home</a>
+        <a href="/sign-up">Sign Up</a>
+        <a href="/log-in">Log In</a>
+    <% } %>
+</nav>
