@@ -80,8 +80,41 @@ async function renameFolder(req, res, next) {
     }
 }
 
+async function deleteFolder(req, res, next) {
+    try {
+        const folderId = parseInt(req.params.id,10);
+        if(isNaN(folderId)){
+            const error = new Error("Invalid folder ID");
+            error.status = 404;
+            throw error;
+        }
+        const folder = await prisma.folder.findFirst({
+            where: {
+                id: folderId,
+                userId: req.user.id,
+            },
+        })
+        if(!folder){
+            const error = new Error("Folder not found");
+            error.status = 404;
+            throw error;
+        }
+        await prisma.folder.delete({
+            where: {
+                id: folderId,
+            },
+        });
+        res.redirect("/dashboard");
+
+    }
+    catch(error) {
+        next(error);
+    }
+}
+
 module.exports = {
     createFolder,
     getFolder,
     renameFolder,
+    deleteFolder,
 }

@@ -12,4 +12,8 @@
     <button type="submit">Rename</button>
 </form>
 
+<form action="/folders/<%= folder.id %>/delete" method="POST">
+    <button type="submit">Delete Folder</button>
+</form>
+
 <%- include("partials/footer") %>
