@@ -13,6 +13,7 @@ async function getDashboard(req, res, next) {
         const folders = await prisma.folder.findMany({
             where: {
                 userId: req.user.id,
+                parentId: null,
             },
             orderBy: {
                 createdAt: "desc",

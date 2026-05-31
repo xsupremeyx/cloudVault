@@ -2,7 +2,44 @@
 
 <h1><%= folder.name %></h1>
 
-<p>Created: <%= folder.createdAt %></p>
+<p>
+    <a href="/dashboard">Dashboard</a>
+
+    <% breadcrumbs.forEach(crumb => { %>
+        /
+        <a href="/folders/<%= crumb.id %>">
+            <%= crumb.name %>
+        </a>
+    <% }) %>
+</p>
+
+<p>Created: <%= folder.createdAt %></p><h2>Child Folders</h2>
+
+<% if (folder.children.length > 0) { %>
+    <ul>
+        <% folder.children.forEach(child => { %>
+            <li>
+                <a href="/folders/<%= child.id %>">
+                    <%= child.name %>
+                </a>
+            </li>
+        <% }) %>
+    </ul>
+<% } else { %>
+    <p>No child folders yet.</p>
+<% } %>
+
+
+<form action="/folders" method="POST">
+    <h2>Create Child Folder</h2>
+    <input type="hidden" name="parentId" value="<%= folder.id %>">
+    <div>
+        <label for="child-name">Folder Name:</label>
+        <input type="text" id="child-name" name="name" required>
+    </div>
+    <button type="submit">Create Child Folder</button>
+</form>
+
 
 <form action="/folders/<%= folder.id %>/edit" method="POST">
     <div>
