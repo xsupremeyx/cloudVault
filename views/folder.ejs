@@ -1,0 +1,15 @@
+<%- include("partials/header", { title: folder.name }) %>
+
+<h1><%= folder.name %></h1>
+
+<p>Created: <%= folder.createdAt %></p>
+
+<form action="/folders/<%= folder.id %>/edit" method="POST">
+    <div>
+        <label for="name">Rename Folder:</label>
+        <input type="text" id="name" name="name" value="<%= folder.name %>" required>
+    </div>
+    <button type="submit">Rename</button>
+</form>
+
+<%- include("partials/footer") %>

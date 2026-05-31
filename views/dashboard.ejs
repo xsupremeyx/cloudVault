@@ -2,8 +2,31 @@
 
 <div class="page-container">
     <h1>Dashboard</h1>
-
     <p>Welcome, <%= currentUser.username %></p>
+    <div>
+        <h2>Your Folders</h2>
+        <% if (folders && folders.length > 0) { %>
+            <ul>
+                <% folders.forEach(folder => { %>
+                    <li>
+                        <a href="/folders/<%= folder.id %>"><%= folder.name %></a>
+                    </li>
+                <% }) %>
+            </ul>
+        <% } else { %>
+            <p>You have no folders yet.</p>
+        <% } %>
+    </div>
+    <form action="/folders" method="POST">
+        <h2>
+            Create a New Folder
+        </h2>
+        <div>
+            <label for="name">Folder Name:</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <button type="submit">Create Folder</button>
+    </form>
 </div>
 
 <%- include("partials/footer") %>

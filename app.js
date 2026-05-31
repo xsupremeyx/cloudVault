@@ -55,8 +55,10 @@ app.use((req, res, next) => {
 // import routes
 const indexRouter = require("./routes/indexRouter");
 const authRouter = require("./routes/authRouter");
+const folderRouter = require("./routes/folders/folderRouter");
 
 // define routes
+app.use("/folders", folderRouter);
 app.use("/", authRouter);
 app.use("/", indexRouter);
 
@@ -68,7 +70,7 @@ app.use((req, res, next) => {
 // global error handler
 app.use((error, req, res, next) => {
     console.error(error);
-    res.status(500).send("Internal Server Error");
+    res.status(error.status || 500).send(error.message || "Internal Server Error");
 })
 
 const PORT = process.env.PORT || 3000

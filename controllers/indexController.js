@@ -1,4 +1,4 @@
-
+const { prisma } = require("../lib/prisma");
 function getIndex(req, res, next) {
     try {
         res.render("index");
@@ -8,9 +8,19 @@ function getIndex(req, res, next) {
     }
 }
 
-function getDashboard(req, res, next) {
+async function getDashboard(req, res, next) {
     try {
-        res.render("dashboard");
+        const folders = await prisma.folder.findMany({
+            where: {
+                userId: req.user.id,
+            },
+            orderBy: {
+                createdAt: "desc",
+            }
+        })
+        res.render("dashboard", {
+            folders,
+        });
     }
     catch (error) {
         next(error);
