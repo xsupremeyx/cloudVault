@@ -52,6 +52,7 @@ async function getFolder(req, res, next){
             include: {
                 children: true,
                 parent: true,
+                files: true,
             }
         })
         if(!folder){
