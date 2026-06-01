@@ -57,6 +57,11 @@
                             Download
                         </a>
                     </li>
+                    <li>
+                        <form action="/folders/files/<%= file.id %>/delete" method="POST">
+                            <button type="submit">Delete</button>
+                        </form>
+                    </li>
                 </ul>
             </li>
         <% }) %>

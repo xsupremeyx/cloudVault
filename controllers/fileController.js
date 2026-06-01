@@ -1,5 +1,6 @@
 const {prisma} = require("../lib/prisma");
 const path = require("node:path");
+const fs = require("node:fs/promises");
 
 async function uploadFile(req, res, next){
     try{
@@ -71,7 +72,46 @@ async function downloadFile(req, res, next){
     }
 }
 
+
+async function deleteFile(req, res, next){
+    try{
+        const fileId = parseInt(req.params.fileId, 10);
+        if (isNaN(fileId)){
+            const error = new Error("Invalid file ID");
+            error.status = 404;
+            throw error;
+        }
+
+        const file = await prisma.file.findFirst({
+            where: {
+                id: fileId,
+                userId: req.user.id,
+            },
+        });
+
+        if(!file){
+            const error = new Error("File not found");
+            error.status = 404;
+            throw error;
+        }
+
+        const folderId = file.folderId;
+        const filePath = path.resolve(file.url);
+        await fs.unlink(filePath);
+        await prisma.file.delete({
+            where: {
+                id: file.id,
+            },
+        });
+        res.redirect(`/folders/${folderId}`);
+    }
+    catch(error){
+        next(error);
+    }
+}
+
 module.exports = {
     uploadFile,
     downloadFile,
+    deleteFile,
 };
