@@ -8,6 +8,7 @@ const fileController = require("../../controllers/fileController");
 
 folderRouter.post("/", ensureAuthenticated, folderController.createFolder);
 folderRouter.post("/:id/files", ensureAuthenticated, upload.single("file"), fileController.uploadFile);
+folderRouter.get("/files/:fileId/download", ensureAuthenticated, fileController.downloadFile);
 folderRouter.get("/:id", ensureAuthenticated, folderController.getFolder);
 folderRouter.post("/:id/edit", ensureAuthenticated, folderController.renameFolder);
 folderRouter.post("/:id/delete", ensureAuthenticated, folderController.deleteFolder);

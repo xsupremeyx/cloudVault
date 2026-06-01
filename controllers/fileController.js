@@ -1,4 +1,5 @@
 const {prisma} = require("../lib/prisma");
+const path = require("node:path");
 
 async function uploadFile(req, res, next){
     try{
@@ -39,6 +40,38 @@ async function uploadFile(req, res, next){
     }
 }
 
+
+async function downloadFile(req, res, next){
+    try{
+        const fileId = parseInt(req.params.fileId, 10);
+        if (isNaN(fileId)){
+            const error = new Error("Invalid file ID");
+            error.status = 404;
+            throw error;
+        }
+
+        const file = await prisma.file.findFirst({
+            where: {
+                id: fileId,
+                userId: req.user.id,
+            },
+        });
+
+        if(!file){
+            const error = new Error("File not found");
+            error.status = 404;
+            throw error;
+        }
+
+        const filePath = path.resolve(file.url);
+        res.download(filePath, file.name);
+    }
+    catch(error){
+        next(error);
+    }
+}
+
 module.exports = {
     uploadFile,
+    downloadFile,
 };

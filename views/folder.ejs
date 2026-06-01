@@ -52,6 +52,11 @@
                     <li>Type: <%= file.mimeType %></li>
                     <li>Size: <%= file.size %> bytes</li>
                     <li>Uploaded: <%= file.uploadedAt.toLocaleString() %></li>
+                    <li>
+                        <a href="/folders/files/<%= file.id %>/download">
+                            Download
+                        </a>
+                    </li>
                 </ul>
             </li>
         <% }) %>
