@@ -3,10 +3,12 @@ const folderRouter = Router();
 const { ensureAuthenticated } = require("../../middleware/authMiddleware");
 const upload = require("../../config/multer");
 
+const { validateFolder } = require("../../middleware/validate");
+
 const folderController = require("../../controllers/folderController");
 const fileController = require("../../controllers/fileController");
 
-folderRouter.post("/", ensureAuthenticated, folderController.createFolder);
+folderRouter.post("/", ensureAuthenticated, validateFolder, folderController.createFolder);
 
 folderRouter.post("/:id/files", ensureAuthenticated, upload.single("file"), fileController.uploadFile);
 folderRouter.get("/files/:fileId/download", ensureAuthenticated, fileController.downloadFile);

@@ -21,6 +21,8 @@ async function getDashboard(req, res, next) {
         })
         res.render("dashboard", {
             folders,
+            errors: [],
+            data: {},
         });
     }
     catch (error) {

@@ -1,7 +1,26 @@
 const { prisma } = require("../lib/prisma");
+const { validationResult } = require("express-validator");
 
 async function createFolder(req, res, next){
     try{
+        const errors = validationResult(req);
+        if(!errors.isEmpty()){
+            console.log(errors.array());
+            const folders = await prisma.folder.findMany({
+                where: {
+                    userId: req.user.id,
+                    parentId: null,
+                },
+                orderBy: {
+                    createdAt: "desc",
+                }
+            })
+            return res.status(400).render("dashboard", {
+                folders,
+                errors: errors.array(),
+                data: req.body,
+            });
+        }
         const { name, parentId } = req.body;
         let parentFolder = null;
         if(parentId){
