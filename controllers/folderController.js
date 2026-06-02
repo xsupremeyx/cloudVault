@@ -1,11 +1,39 @@
 const { prisma } = require("../lib/prisma");
 const { validationResult } = require("express-validator");
 
-async function createFolder(req, res, next){
-    try{
+async function createFolder(req, res, next) {
+    try {
         const errors = validationResult(req);
-        if(!errors.isEmpty()){
-            console.log(errors.array());
+
+        if (!errors.isEmpty()) {
+
+            const { parentId } = req.body;
+
+            if (parentId) {
+
+                const folder = await prisma.folder.findFirst({
+                    where: {
+                        id: parseInt(parentId, 10),
+                        userId: req.user.id,
+                    },
+                    include: {
+                        children: true,
+                        parent: true,
+                        files: true,
+                    },
+                });
+
+                const breadcrumbs = await buildBreadcrumbs(folder);
+
+                return res.status(400).render("folder", {
+                    folder,
+                    breadcrumbs,
+                    errors: errors.array(),
+                    data: req.body,
+                    formType: "childFolder",
+                });
+            }
+
             const folders = await prisma.folder.findMany({
                 where: {
                     userId: req.user.id,
@@ -13,8 +41,9 @@ async function createFolder(req, res, next){
                 },
                 orderBy: {
                     createdAt: "desc",
-                }
-            })
+                },
+            });
+
             return res.status(400).render("dashboard", {
                 folders,
                 errors: errors.array(),
@@ -23,7 +52,7 @@ async function createFolder(req, res, next){
         }
         const { name, parentId } = req.body;
         let parentFolder = null;
-        if(parentId){
+        if (parentId) {
             parentFolder = await prisma.folder.findFirst({
                 where: {
                     id: parseInt(parentId, 10),
@@ -31,7 +60,7 @@ async function createFolder(req, res, next){
                 },
             });
         }
-        
+
         if (parentId && !parentFolder) {
             const error = new Error("Parent folder not found");
             error.status = 404;
@@ -50,15 +79,15 @@ async function createFolder(req, res, next){
 
         res.redirect("/dashboard");
     }
-    catch(error){
+    catch (error) {
         next(error);
     }
 }
 
-async function getFolder(req, res, next){
-    try{
-        const folderId = parseInt(req.params.id,10);
-        if(isNaN(folderId)){
+async function getFolder(req, res, next) {
+    try {
+        const folderId = parseInt(req.params.id, 10);
+        if (isNaN(folderId)) {
             const error = new Error("Invalid folder ID");
             error.status = 404;
             throw error;
@@ -74,7 +103,7 @@ async function getFolder(req, res, next){
                 files: true,
             }
         })
-        if(!folder){
+        if (!folder) {
             const error = new Error("Folder not found");
             error.status = 404;
             throw error;
@@ -83,17 +112,46 @@ async function getFolder(req, res, next){
         res.render("folder", {
             folder,
             breadcrumbs,
+            errors: [],
+            data: {},
+            formType: null,
         });
     }
-    catch(error){
+    catch (error) {
         next(error);
     }
 }
 
 async function renameFolder(req, res, next) {
     try {
-        const folderId = parseInt(req.params.id,10);
-        if(isNaN(folderId)){
+        const folderId = parseInt(req.params.id, 10);
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            const folder = await prisma.folder.findFirst({
+                where: {
+                    id: folderId,
+                    userId: req.user.id,
+                },
+                include: {
+                    children: true,
+                    parent: true,
+                    files: true,
+                },
+            });
+
+            const breadcrumbs = await buildBreadcrumbs(folder);
+
+            return res.status(400).render("folder", {
+                folder,
+                breadcrumbs,
+                errors: errors.array(),
+                data: req.body,
+                formType: "rename",
+            });
+        }
+
+        if (isNaN(folderId)) {
             const error = new Error("Invalid folder ID");
             error.status = 404;
             throw error;
@@ -105,7 +163,7 @@ async function renameFolder(req, res, next) {
                 userId: req.user.id,
             },
         })
-        if(!folder){
+        if (!folder) {
             const error = new Error("Folder not found");
             error.status = 404;
             throw error;
@@ -121,15 +179,15 @@ async function renameFolder(req, res, next) {
         res.redirect(`/folders/${folderId}`);
 
     }
-    catch(error) {
+    catch (error) {
         next(error);
     }
 }
 
 async function deleteFolder(req, res, next) {
     try {
-        const folderId = parseInt(req.params.id,10);
-        if(isNaN(folderId)){
+        const folderId = parseInt(req.params.id, 10);
+        if (isNaN(folderId)) {
             const error = new Error("Invalid folder ID");
             error.status = 404;
             throw error;
@@ -143,7 +201,7 @@ async function deleteFolder(req, res, next) {
                 parent: true,
             },
         })
-        if(!folder){
+        if (!folder) {
             const error = new Error("Folder not found");
             error.status = 404;
             throw error;
@@ -160,7 +218,7 @@ async function deleteFolder(req, res, next) {
         res.redirect("/dashboard");
 
     }
-    catch(error) {
+    catch (error) {
         next(error);
     }
 }
@@ -168,14 +226,14 @@ async function deleteFolder(req, res, next) {
 async function buildBreadcrumbs(folder) {
     const breadcrumbs = [];
     let currentFolder = folder;
-    while(currentFolder){
+    while (currentFolder) {
         // add current folder to breadcrumbs
         breadcrumbs.push({
             id: currentFolder.id,
             name: currentFolder.name,
         });
         // stop if root
-        if(!currentFolder.parentId){
+        if (!currentFolder.parentId) {
             break;
         }
         // fetch parent folder

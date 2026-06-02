@@ -15,6 +15,6 @@ folderRouter.get("/files/:fileId/download", ensureAuthenticated, fileController.
 folderRouter.post("/files/:fileId/delete", ensureAuthenticated, fileController.deleteFile);
 
 folderRouter.get("/:id", ensureAuthenticated, folderController.getFolder);
-folderRouter.post("/:id/edit", ensureAuthenticated, folderController.renameFolder);
+folderRouter.post("/:id/edit", ensureAuthenticated, validateFolder, folderController.renameFolder);
 folderRouter.post("/:id/delete", ensureAuthenticated, folderController.deleteFolder);
 module.exports = folderRouter;

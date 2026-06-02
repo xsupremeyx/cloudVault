@@ -31,11 +31,20 @@
 
 
 <form action="/folders" method="POST">
+    <% if (formType === "childFolder") { %>
+        <%- include("partials/error") %>
+    <% } %>
     <h2>Create Child Folder</h2>
+    <%
+    const childFolderNameError =
+        formType === "childFolder"
+            ? errors.find(error => error.path === "name")
+            : null;
+    %>
     <input type="hidden" name="parentId" value="<%= folder.id %>">
     <div>
         <label for="child-name">Folder Name:</label>
-        <input type="text" id="child-name" name="name" required>
+        <input type="text" id="child-name" name="name" value="<%= formType === 'childFolder' ? (data.name || '') : '' %>" class="<%= childFolderNameError ? 'input-error' : '' %>" required>
     </div>
     <button type="submit">Create Child Folder</button>
 </form>
@@ -83,9 +92,14 @@
 
 
 <form action="/folders/<%= folder.id %>/edit" method="POST">
+    <% if (formType === "rename") { %>
+        <%- include("partials/error") %>
+    <% } %>
+
+    <% const renameNameError = formType === "rename" ? errors.find(error => error.path === "name") : null; %>
     <div>
         <label for="name">Rename Folder:</label>
-        <input type="text" id="name" name="name" value="<%= folder.name %>" required>
+        <input type="text" id="name" name="name" value="<%= formType === 'rename' ? (data.name || '') : folder.name%>" class="<%= renameNameError ? 'input-error' : '' %>" required>
     </div>
     <button type="submit">Rename</button>
 </form>
