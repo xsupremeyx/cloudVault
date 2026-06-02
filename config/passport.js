@@ -6,9 +6,12 @@ const bcrypt = require("bcryptjs");
 passport.use(
     new LocalStrategy(async (username, password, done) => {
         try{
-            const user = await prisma.user.findUnique({
-                where: { username, },
-            });
+            const users = await prisma.user.findMany();
+
+            const user = users.find(
+                user =>
+                    user.username.toLowerCase() === username.toLowerCase()
+            );
             if(!user){
                 return done(null, false)
             }

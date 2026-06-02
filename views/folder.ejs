@@ -13,7 +13,7 @@
     <% }) %>
 </p>
 
-<p>Created: <%= folder.createdAt %></p><h2>Child Folders</h2>
+<p>Created: <%= folder.createdAt.toLocaleDateString() %></p><h2>Child Folders</h2>
 
 <% if (folder.children.length > 0) { %>
     <ul>
@@ -59,7 +59,7 @@
 
                 <ul>
                     <li>Type: <%= file.mimeType %></li>
-                    <li>Size: <%= file.size %> bytes</li>
+                    <li>Size: <%= file.formattedSize %></li>
                     <li>Uploaded: <%= file.uploadedAt.toLocaleString() %></li>
                     <li>
                         <a href="/folders/files/<%= file.id %>/download">
@@ -82,10 +82,19 @@
 <form action="/folders/<%= folder.id %>/files" method="POST" enctype="multipart/form-data">
     <h2>Upload File</h2>
 
+    <% if (formType === "upload") { %>
+        <%- include("partials/error") %>
+    <% } %>
+
     <div>
         <label for="file">Choose File:</label>
         <input type="file" id="file" name="file" required>
     </div>
+
+    <p>
+        Allowed types: JPG, PNG, WEBP, PDF, TXT.
+        Maximum size: 10 MB.
+    </p>
 
     <button type="submit">Upload</button>
 </form>

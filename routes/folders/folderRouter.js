@@ -1,7 +1,7 @@
 const { Router } = require("express");
 const folderRouter = Router();
 const { ensureAuthenticated } = require("../../middleware/authMiddleware");
-const upload = require("../../config/multer");
+const { uploadSingleFile } = require("../../middleware/uploadMiddleware");
 
 const { validateFolder } = require("../../middleware/validate");
 
@@ -10,7 +10,7 @@ const fileController = require("../../controllers/fileController");
 
 folderRouter.post("/", ensureAuthenticated, validateFolder, folderController.createFolder);
 
-folderRouter.post("/:id/files", ensureAuthenticated, upload.single("file"), fileController.uploadFile);
+folderRouter.post("/:id/files", ensureAuthenticated, uploadSingleFile, fileController.uploadFile);
 folderRouter.get("/files/:fileId/download", ensureAuthenticated, fileController.downloadFile);
 folderRouter.post("/files/:fileId/delete", ensureAuthenticated, fileController.deleteFile);
 

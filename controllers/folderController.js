@@ -1,5 +1,6 @@
 const { prisma } = require("../lib/prisma");
 const { validationResult } = require("express-validator");
+const { formatFileSize } = require("../utils/formatFileSize");
 
 async function createFolder(req, res, next) {
     try {
@@ -108,6 +109,11 @@ async function getFolder(req, res, next) {
             error.status = 404;
             throw error;
         }
+
+        folder.files.forEach(file => {
+            file.formattedSize = formatFileSize(file.size);
+        });
+
         const breadcrumbs = await buildBreadcrumbs(folder);
         res.render("folder", {
             folder,
@@ -138,6 +144,9 @@ async function renameFolder(req, res, next) {
                     parent: true,
                     files: true,
                 },
+            });
+            folder.files.forEach(file => {
+                file.formattedSize = formatFileSize(file.size);
             });
 
             const breadcrumbs = await buildBreadcrumbs(folder);
