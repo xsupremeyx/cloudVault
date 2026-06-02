@@ -77,7 +77,21 @@ const validateSignUp = [
 
 ];
 
+
+const validateLogIn = [
+    body("username")
+        .notEmpty()
+        .withMessage("Username is required.")
+        .bail(),
+
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required.")
+        .bail(),
+];
+
 module.exports = {
     validateFolder,
     validateSignUp,
+    validateLogIn,
 };

@@ -1,15 +1,16 @@
 const { Router } = require("express");
 const authRouter = Router();
-const passport = require("passport");
 
 const authController = require("../controllers/authController");
-const { validateSignUp } = require("../middleware/validate");
+const { validateSignUp, validateLogIn } = require("../middleware/validate");
 
 authRouter.post("/log-out", authController.postLogOut);
-authRouter.post("/log-in", passport.authenticate("local", {
-    successRedirect: "/dashboard",
-    failureRedirect: "/log-in",
-}));
+
+authRouter.post(
+    "/log-in",
+    validateLogIn,
+    authController.postLogIn
+);
 
 
 authRouter.get("/log-in", authController.getLogIn);

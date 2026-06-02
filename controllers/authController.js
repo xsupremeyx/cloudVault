@@ -1,6 +1,7 @@
 const bcrypt = require("bcryptjs");
 const { prisma } = require("../lib/prisma");
 const { validationResult } = require("express-validator");
+const passport = require("passport");
 
 function getSignUp(req, res, next) {
     try {
@@ -43,7 +44,57 @@ async function postSignUp(req, res, next) {
 
 function getLogIn(req, res, next) {
     try {
-        res.render("log-in");
+        res.render("log-in", {
+            errors: [],
+            data: {},
+        });
+    }
+    catch (error) {
+        next(error);
+    }
+}
+
+async function postLogIn(req, res, next) {
+    try {
+        const errors = validationResult(req);
+
+        if (!errors.isEmpty()) {
+            return res.status(400).render("log-in", {
+                errors: errors.array(),
+                data: req.body,
+            });
+        }
+
+        return passport.authenticate(
+            "local",
+            (error, user) => {
+                if (error) {
+                    return next(error);
+                }
+
+                if (!user) {
+                    return res.status(401).render("log-in", {
+                        errors: [
+                            {
+                                msg: "Incorrect username or password.",
+                            },
+                        ],
+                        data: {
+                            username: req.body.username,
+                        },
+                    });
+                }
+
+                req.logIn(user, (error) => {
+                    if (error) {
+                        return next(error);
+                    }
+
+                    return res.redirect("/dashboard");
+                });
+            }
+        )(req, res, next);
+
     }
     catch (error) {
         next(error);
@@ -65,4 +116,5 @@ module.exports = {
     postSignUp,
     getLogIn,
     postLogOut,
+    postLogIn,
 }

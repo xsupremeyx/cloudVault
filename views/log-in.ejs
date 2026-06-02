@@ -2,16 +2,25 @@
 
 <div class="page-container">
     <h1>Log In</h1>
-
+    <%- include("partials/error") %>
     <form action="/log-in" method="POST">
+
+        <%
+        const usernameError =
+            errors.find(error => error.path === "username");
+
+        const passwordError =
+            errors.find(error => error.path === "password");
+        %>
+
         <div>
             <label for="username">Username</label>
-            <input type="text" id="username" name="username" required>
+            <input type="text" id="username" name="username" value="<%= data.username || '' %>" class="<%= usernameError ? 'input-error' : '' %>" required>
         </div>
 
         <div>
             <label for="password">Password</label>
-            <input type="password" id="password" name="password" required>
+            <input type="password" id="password" name="password" class="<%= passwordError ? 'input-error' : '' %>" required>
         </div>
 
         <button type="submit">Log In</button>
