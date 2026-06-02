@@ -4,11 +4,11 @@ const { prisma } = require("../lib/prisma");
 const validateFolder = [
     body("name")
         .trim()
-        .isLength({ min: 1, max: 50})
+        .isLength({ min: 1, max: 50 })
         .withMessage("Folder name must be 1-50 characters long.")
-        .custom(async(value, { req}) => {
-            const parentId = req.body.parentId ? parseInt(req.body.parentId,10) : null;
-            const currentFolderId = req.params.id ? parseInt(req.params.id,10) : null;
+        .custom(async (value, { req }) => {
+            const parentId = req.body.parentId ? parseInt(req.body.parentId, 10) : null;
+            const currentFolderId = req.params.id ? parseInt(req.params.id, 10) : null;
             const folders = await prisma.folder.findMany({
                 where: {
                     userId: req.user.id,
@@ -19,13 +19,65 @@ const validateFolder = [
                 folder => folder.name.toLowerCase() === value.toLowerCase() && folder.id !== currentFolderId
             );
 
-            if(duplicate){
+            if (duplicate) {
                 throw new Error("A folder with this name already exists here.");
             }
             return true;
         }),
 ];
 
+
+const validateSignUp = [
+    body("username")
+        .notEmpty()
+        .withMessage("Username is required.")
+        .bail()
+        .isLength({ min: 3, max: 30 })
+        .withMessage("Username must be 3-30 characters long.")
+        .bail()
+        .matches(/^[A-Za-z0-9_]+$/)
+        .withMessage("Username may only contain letters, numbers, and underscores.")
+        .bail()
+        .custom(async (value) => {
+            const users = await prisma.user.findMany();
+
+            const duplicate = users.find(
+                user =>
+                    user.username.toLowerCase() === value.toLowerCase()
+            );
+
+            if (duplicate) {
+                throw new Error("Username is already taken.");
+            }
+
+            return true;
+        }),
+
+    body("password")
+        .notEmpty()
+        .withMessage("Password is required.")
+        .bail()
+        .matches(/^(?=.*[A-Za-z])(?=.*\d)[^\s]{8,}$/)
+        .withMessage(
+            "Password must be at least 8 characters, contain at least one letter and one number, and cannot contain spaces."
+        )
+        .bail(),
+
+    body("confirmPassword")
+        .notEmpty()
+        .withMessage("Please confirm your password.")
+        .bail()
+        .custom((value, { req }) => {
+            if (value !== req.body.password) {
+                throw new Error("Passwords do not match.");
+            }
+
+            return true;
+        }),
+
+];
+
 module.exports = {
     validateFolder,
+    validateSignUp,
 };

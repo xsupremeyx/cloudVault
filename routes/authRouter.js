@@ -3,6 +3,7 @@ const authRouter = Router();
 const passport = require("passport");
 
 const authController = require("../controllers/authController");
+const { validateSignUp } = require("../middleware/validate");
 
 authRouter.post("/log-out", authController.postLogOut);
 authRouter.post("/log-in", passport.authenticate("local", {
@@ -13,6 +14,6 @@ authRouter.post("/log-in", passport.authenticate("local", {
 
 authRouter.get("/log-in", authController.getLogIn);
 authRouter.get("/sign-up", authController.getSignUp);
-authRouter.post("/sign-up", authController.postSignUp);
+authRouter.post("/sign-up", validateSignUp, authController.postSignUp);
 
 module.exports = authRouter;
