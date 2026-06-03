@@ -7,9 +7,11 @@ const { validateFolder } = require("../../middleware/validate");
 
 const folderController = require("../../controllers/folderController");
 const fileController = require("../../controllers/fileController");
+const shareController = require("../../controllers/shareController");
 
 folderRouter.post("/", ensureAuthenticated, validateFolder, folderController.createFolder);
 
+folderRouter.post("/:id/share", ensureAuthenticated, shareController.createShare);
 folderRouter.post("/:id/files", ensureAuthenticated, uploadSingleFile, fileController.uploadFile);
 folderRouter.get("/files/:fileId/download", ensureAuthenticated, fileController.downloadFile);
 folderRouter.post("/files/:fileId/delete", ensureAuthenticated, fileController.deleteFile);

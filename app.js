@@ -56,8 +56,10 @@ app.use((req, res, next) => {
 const indexRouter = require("./routes/indexRouter");
 const authRouter = require("./routes/authRouter");
 const folderRouter = require("./routes/folders/folderRouter");
+const shareRouter = require("./routes/shareRouter");
 
 // define routes
+app.use("/share", shareRouter);
 app.use("/folders", folderRouter);
 app.use("/", authRouter);
 app.use("/", indexRouter);

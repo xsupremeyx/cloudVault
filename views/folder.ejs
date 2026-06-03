@@ -117,4 +117,39 @@
     <button type="submit">Delete Folder</button>
 </form>
 
+<form action="/folders/<%= folder.id %>/share" method="POST">
+    <button type="submit">
+        <%= shareUrl ? "Refresh Share Link" : "Create Share Link" %>
+    </button>
+</form>
+
+<% if (shareUrl) { %>
+    <div>
+        <p>Share Link:</p>
+
+        <input
+            type="text"
+            id="share-url"
+            value="<%= shareUrl %>"
+            readonly
+        >
+
+        <button
+            type="button"
+            onclick="copyShareLink()"
+        >
+            Copy
+        </button>
+    </div>
+
+    <script>
+        function copyShareLink() {
+            const input =
+                document.getElementById("share-url");
+
+            navigator.clipboard.writeText(input.value);
+        }
+    </script>
+<% } %>
+
 <%- include("partials/footer") %>

@@ -103,6 +103,7 @@ async function getFolder(req, res, next) {
                 children: true,
                 parent: true,
                 files: true,
+                share: true,
             }
         })
         if (!folder) {
@@ -116,9 +117,16 @@ async function getFolder(req, res, next) {
         });
 
         const breadcrumbs = await buildBreadcrumbs(folder);
+        let shareUrl = null;
+
+        if (folder.share) {
+            shareUrl =
+                `${req.protocol}://${req.get("host")}/share/${folder.share.token}`;
+        }
         res.render("folder", {
             folder,
             breadcrumbs,
+            shareUrl,
             errors: [],
             data: {},
             formType: null,

@@ -1,0 +1,55 @@
+<%- include("partials/header", { title: folder.name }) %>
+
+<h1>Shared Folder: <%= folder.name %></h1>
+<p>
+    <% breadcrumbs.forEach((crumb, index) => { %>
+
+        <% if (index > 0) { %>
+            /
+        <% } %>
+
+        <% if (index === 0) { %>
+            <a href="/share/<%= token %>">
+                <%= crumb.name %>
+            </a>
+        <% } else { %>
+            <a href="/share/<%= token %>/folders/<%= crumb.id %>">
+                <%= crumb.name %>
+            </a>
+        <% } %>
+
+    <% }) %>
+</p>
+<h2>Folders</h2>
+
+<% if (folder.children.length > 0) { %>
+    <ul>
+        <% folder.children.forEach(child => { %>
+            <li>
+                <a href="/share/<%= token %>/folders/<%= child.id %>">
+                    <%= child.name %>
+                </a>
+            </li>
+        <% }) %>
+    </ul>
+<% } else { %>
+    <p>No folders.</p>
+<% } %>
+
+<h2>Files</h2>
+
+<% if (folder.files.length > 0) { %>
+    <ul>
+        <% folder.files.forEach(file => { %>
+            <li>
+                <a href="/share/<%= token %>/files/<%= file.id %>/download">
+                    <%= file.name %>
+                </a>
+            </li>
+        <% }) %>
+    </ul>
+<% } else { %>
+    <p>No files.</p>
+<% } %>
+
+<%- include("partials/footer") %>
