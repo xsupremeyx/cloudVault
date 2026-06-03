@@ -1,7 +1,7 @@
 const { prisma } = require("../lib/prisma");
-const path = require("node:path");
-const fs = require("node:fs/promises");
 const { formatFileSize } = require("../utils/formatFileSize");
+
+const storage = require("../lib/storage");
 
 async function uploadFile(req, res, next) {
     try {
@@ -80,12 +80,19 @@ async function uploadFile(req, res, next) {
             throw error;
         }
 
+        const { storagePath, publicUrl } =
+        await storage.uploadFile({
+            userId: req.user.id,
+            file: req.file,
+        });
+
         await prisma.file.create({
             data: {
                 name: req.file.originalname,
                 size: req.file.size,
                 mimeType: req.file.mimetype,
-                url: req.file.path,
+                url: publicUrl,
+                storagePath,
                 folderId: folder.id,
                 userId: req.user.id,
             },
@@ -120,8 +127,7 @@ async function downloadFile(req, res, next) {
             throw error;
         }
 
-        const filePath = path.resolve(file.url);
-        res.download(filePath, file.name);
+        return res.redirect(file.url);
     }
     catch (error) {
         next(error);
@@ -152,8 +158,9 @@ async function deleteFile(req, res, next) {
         }
 
         const folderId = file.folderId;
-        const filePath = path.resolve(file.url);
-        await fs.unlink(filePath);
+
+        await storage.deleteFile(file.storagePath);
+
         await prisma.file.delete({
             where: {
                 id: file.id,

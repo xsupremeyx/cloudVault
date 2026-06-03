@@ -1,6 +1,7 @@
 const { prisma } = require("../lib/prisma");
 const { validationResult } = require("express-validator");
 const { formatFileSize } = require("../utils/formatFileSize");
+const storage = require("../lib/storage");
 
 async function createFolder(req, res, next) {
     try {
@@ -215,6 +216,26 @@ async function deleteFolder(req, res, next) {
             error.status = 404;
             throw error;
         }
+        const folderIds = await getDescendantFolderIds(folderId);
+
+        const files = await prisma.file.findMany({
+            where: {
+                folderId: {
+                    in: folderIds,
+                },
+            },
+            select: {
+                storagePath: true,
+            },
+        });
+
+        const storagePaths = files
+            .map(file => file.storagePath)
+            .filter(Boolean);
+
+        if (storagePaths.length > 0) {
+            await storage.deleteFiles(storagePaths);
+        }
         await prisma.folder.delete({
             where: {
                 id: folderId,
@@ -256,6 +277,27 @@ async function buildBreadcrumbs(folder) {
     }
     // reverse to get correct order
     return breadcrumbs.reverse();
+}
+
+
+async function getDescendantFolderIds(folderId) {
+    const ids = [folderId];
+
+    const children = await prisma.folder.findMany({
+        where: {
+            parentId: folderId,
+        },
+        select: {
+            id: true,
+        },
+    });
+
+    for (const child of children) {
+        const childIds = await getDescendantFolderIds(child.id);
+        ids.push(...childIds);
+    }
+
+    return ids;
 }
 
 module.exports = {
