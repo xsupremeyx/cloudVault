@@ -1,2 +1,16 @@
+  <footer class="footer" role="contentinfo">
+    <div class="container footer__inner">
+      <a href="/" class="footer__brand" aria-label="CloudVault home">
+        Cloud<span class="accent">Vault</span>
+      </a>
+      <p class="footer__copy">
+        &copy; <%= new Date().getFullYear() %> CloudVault. All rights reserved.
+      </p>
+    </div>
+  </footer>
+  <!-- Initialise Lucide icons after full DOM is ready -->
+  <script>
+    if (typeof lucide !== 'undefined') { lucide.createIcons(); }
+  </script>
 </body>
 </html>
