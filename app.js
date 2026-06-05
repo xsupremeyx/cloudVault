@@ -16,6 +16,7 @@ const passport = require("./config/passport");
 
 // app declare
 const app = express();
+app.set("trust proxy", 1);
 
 // add view engine of ejs
 app.set("views", path.join(__dirname,"views"));
