@@ -118,6 +118,12 @@ ul,
 ol {
   list-style: none;
 }
+
+html,
+body {
+  overflow-x: hidden;
+}
+
 /* ============================================================
    3. BASE STYLES
    ============================================================ */
@@ -701,6 +707,7 @@ button:disabled {
 }
 table {
   width: 100%;
+  min-width: 700px;
   border-collapse: collapse;
   font-size: var(--text-sm);
   background-color: var(--color-surface);
@@ -789,6 +796,36 @@ tbody tr:last-child td {
   .navbar__username-text {
     display: none;
   }
+  .navbar__inner {
+    gap: var(--space-2);
+  }
+
+  .navbar__brand-name {
+    font-size: var(--text-lg);
+  }
+
+  .navbar__link {
+    padding: var(--space-2);
+  }
+
+  .navbar__divider {
+    margin-inline: 0;
+  }
+
+
+  .file-table td,
+  .file-table th {
+    padding: var(--space-2);
+  }
+
+  .file-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .file-actions .btn {
+    width: 100%;
+  }
 }
 @media (max-width: 480px) {
   :root {
@@ -801,5 +838,21 @@ tbody tr:last-child td {
   }
   .card-auth {
     margin-top: var(--space-8);
+  }
+  .navbar__brand-name {
+    display: none;
+  }
+
+  .navbar__link {
+    font-size: 0;
+  }
+
+  .navbar__link i {
+    width: 16px !important;
+    height: 16px !important;
+  }
+
+  .navbar__logout-form .btn {
+    padding-inline: var(--space-2);
   }
 }

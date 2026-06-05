@@ -1,55 +1,221 @@
-<%- include("partials/header", { title: folder.name }) %>
-
-<h1>Shared Folder: <%= folder.name %></h1>
-<p>
-    <% breadcrumbs.forEach((crumb, index) => { %>
-
+<style>
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  .breadcrumb a:hover { color: var(--color-text-primary); text-decoration: none; }
+  .breadcrumb-sep { color: var(--color-border-hover); user-select: none; }
+  .breadcrumb [aria-current="page"] {
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
+  .section { margin-bottom: var(--space-6); }
+  .section-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+  .subfolder-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--space-3); }
+  @media (max-width: 900px) { .subfolder-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 640px) { .subfolder-grid { grid-template-columns: 1fr; } }
+  
+  .subfolder-card { 
+    display: flex; 
+    flex-direction: column; 
+    align-items: flex-start;
+    gap: var(--space-2); 
+    text-decoration: none; 
+    color: inherit;
+    padding: var(--space-3) var(--space-4);
+    min-height: 120px;
+  }
+  .subfolder-card:hover { text-decoration: none; }
+  .file-table { width: 100%; border-collapse: collapse; }
+  .file-table th,
+  .file-table td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+  .file-table th {
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-alt);
+    white-space: nowrap;
+  }
+  .file-table tbody tr { transition: background-color var(--transition-fast); }
+  .file-table tbody tr:hover { background-color: var(--color-surface-alt); }
+  .file-table tbody tr:last-child td { border-bottom: none; }
+</style>
+<%- include("partials/header", { title: folder.name + " — Shared" }) %>
+<main class="main-content">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Folder breadcrumb">
+      <% breadcrumbs.forEach(function(crumb, index) { %>
         <% if (index > 0) { %>
-            /
+          <span class="breadcrumb-sep" aria-hidden="true">/</span>
         <% } %>
-
-        <% if (index === 0) { %>
-            <a href="/share/<%= token %>">
-                <%= crumb.name %>
-            </a>
+        <% if (index === breadcrumbs.length - 1) { %>
+          <% if (index === 0) { %>
+            <i data-lucide="home" style="width:14px;height:14px;" aria-hidden="true"></i>
+          <% } %>
+          <span aria-current="page"><%= crumb.name %></span>
         <% } else { %>
-            <a href="/share/<%= token %>/folders/<%= crumb.id %>">
-                <%= crumb.name %>
+          <% if (index === 0) { %>
+            <a href="/share/<%= token %>">
+              <i data-lucide="home" style="width:14px;height:14px;" aria-hidden="true"></i>
+              <%= crumb.name %>
             </a>
+          <% } else { %>
+            <a href="/share/<%= token %>/folders/<%= crumb.id %>">
+              <%= crumb.name %>
+            </a>
+          <% } %>
         <% } %>
-
-    <% }) %>
-</p>
-<h2>Folders</h2>
-
-<% if (folder.children.length > 0) { %>
-    <ul>
-        <% folder.children.forEach(child => { %>
-            <li>
-                <a href="/share/<%= token %>/folders/<%= child.id %>">
-                    <%= child.name %>
-                </a>
-            </li>
-        <% }) %>
-    </ul>
-<% } else { %>
-    <p>No folders.</p>
-<% } %>
-
-<h2>Files</h2>
-
-<% if (folder.files.length > 0) { %>
-    <ul>
-        <% folder.files.forEach(file => { %>
-            <li>
-                <a href="/share/<%= token %>/files/<%= file.id %>/download">
-                    <%= file.name %>
-                </a>
-            </li>
-        <% }) %>
-    </ul>
-<% } else { %>
-    <p>No files.</p>
-<% } %>
-
+      <% }) %>
+    </nav>
+    <div class="page-header" style="display: flex; align-items: center; gap: var(--space-3);">
+      <div style="
+        width: 52px;
+        height: 52px;
+        background-color: var(--color-accent-subtle);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-xs);
+      ">
+        <i data-lucide="folder" style="width:26px;height:26px;color:var(--color-accent);" aria-hidden="true"></i>
+      </div>
+      <div>
+        <div style="display: flex; align-items: center; gap: var(--space-3);">
+          <h1 style="margin: 0; line-height: var(--leading-tight);"><%= folder.name %></h1>
+          <span class="badge badge-gray">Shared View</span>
+        </div>
+      </div>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <h2 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0;">
+          Subfolders
+        </h2>
+        <span class="badge badge-gray"><%= (folder.children ? folder.children.length : 0) %></span>
+      </div>
+      <% if (folder.children && folder.children.length > 0) { %>
+        <div class="subfolder-grid">
+          <% folder.children.forEach(function(subFolder) { %>
+            <a href="/share/<%= token %>/folders/<%= subFolder.id %>" class="card subfolder-card" aria-label="Open subfolder: <%= subFolder.name %>">
+              <div style="
+                width: 36px;
+                height: 36px;
+                background-color: var(--color-accent-subtle);
+                border-radius: var(--radius-md);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex-shrink: 0;
+              ">
+                <i data-lucide="folder" style="width:18px;height:18px;color:var(--color-accent);" aria-hidden="true"></i>
+              </div>
+                <div>
+                    <p style="
+                        font-size: var(--text-sm);
+                        font-weight: var(--font-medium);
+                        color: var(--color-text-primary);
+                        margin: 0;">
+                        <%= subFolder.name %>
+                    </p>
+                </div>
+            </a>
+          <% }) %>
+        </div>
+      <% } else { %>
+        <div class="empty-state" style="padding: var(--space-8) var(--space-6);">
+          <div class="empty-state-icon">
+            <i data-lucide="folder-open" style="width:26px;height:26px;" aria-hidden="true"></i>
+          </div>
+          <h3>No subfolders</h3>
+          <p>This folder doesn't contain any subfolders.</p>
+        </div>
+      <% } %>
+    </div>
+    <div class="section">
+      <div class="section-header">
+        <h2 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0;">
+          Files
+        </h2>
+        <span class="badge badge-gray"><%= (folder.files ? folder.files.length : 0) %></span>
+      </div>
+      <% if (folder.files && folder.files.length > 0) { %>
+        <div class="table-wrapper">
+          <table class="file-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Size</th>
+                <th>Type</th>
+                <th>Uploaded</th>
+                <th style="text-align: right;">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% folder.files.forEach(function(file) { %>
+                <tr>
+                  <td style="max-width: 320px;">
+                    <div style="display: flex; align-items: center; gap: var(--space-2);">
+                      <i data-lucide="file" style="width:14px;height:14px;color:var(--color-text-muted);flex-shrink:0;" aria-hidden="true"></i>
+                      <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;">
+                        <%= file.name %>
+                      </span>
+                    </div>
+                  </td>
+                  <td style="white-space: nowrap; color: var(--color-text-secondary);">
+                    <%= file.formattedSize %>
+                  </td>
+                  <td>
+                    <span class="badge badge-gray">
+                      <%= file.mimeType ? (file.mimeType.split('/')[1] || file.mimeType) : '—' %>
+                    </span>
+                  </td>
+                  <td style="white-space: nowrap; color: var(--color-text-secondary);">
+                    <%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                  </td>
+                  <td style="text-align: right;">
+                    <a
+                      href="/share/<%= token %>/files/<%= file.id %>/download"
+                      class="btn btn-secondary btn-sm"
+                      aria-label="Download <%= file.name %>"
+                    >
+                      <i data-lucide="download" style="width:13px;height:13px;" aria-hidden="true"></i>
+                      Download
+                    </a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } else { %>
+        <div class="empty-state" style="padding: var(--space-8) var(--space-6);">
+          <div class="empty-state-icon">
+            <i data-lucide="file-x" style="width:26px;height:26px;" aria-hidden="true"></i>
+          </div>
+          <h3>No files</h3>
+          <p>This folder doesn't contain any files.</p>
+        </div>
+      <% } %>
+    </div>
+  </div>
+</main>
 <%- include("partials/footer") %>
