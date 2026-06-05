@@ -1,5 +1,6 @@
 const { prisma } = require("../lib/prisma");
 const { formatFileSize } = require("../utils/formatFileSize");
+const { buildBreadcrumbs } = require("../utils/folderTree");
 
 const storage = require("../lib/storage");
 
@@ -34,6 +35,7 @@ async function uploadFile(req, res, next) {
                     children: true,
                     parent: true,
                     files: true,
+                    share: true,
                 },
             });
 
@@ -41,29 +43,19 @@ async function uploadFile(req, res, next) {
                 file.formattedSize = formatFileSize(file.size);
             });
 
-            const breadcrumbs = [];
-            let currentFolder = folderWithRelations;
+            const breadcrumbs = await buildBreadcrumbs(folderWithRelations);
 
-            while (currentFolder) {
-                breadcrumbs.unshift({
-                    id: currentFolder.id,
-                    name: currentFolder.name,
-                });
+            let shareUrl = null;
 
-                if (!currentFolder.parentId) {
-                    break;
-                }
-
-                currentFolder = await prisma.folder.findUnique({
-                    where: {
-                        id: currentFolder.parentId,
-                    },
-                });
+            if (folderWithRelations.share) {
+                shareUrl =
+                    `${req.protocol}://${req.get("host")}/share/${folderWithRelations.share.token}`;
             }
 
             return res.status(400).render("folder", {
                 folder: folderWithRelations,
                 breadcrumbs,
+                shareUrl,
                 errors: [
                     {
                         msg: req.uploadError,
@@ -81,10 +73,10 @@ async function uploadFile(req, res, next) {
         }
 
         const { storagePath, publicUrl } =
-        await storage.uploadFile({
-            userId: req.user.id,
-            file: req.file,
-        });
+            await storage.uploadFile({
+                userId: req.user.id,
+                file: req.file,
+            });
 
         await prisma.file.create({
             data: {
