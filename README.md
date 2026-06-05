@@ -277,7 +277,7 @@ Production cookies are set with `secure: true` when `NODE_ENV=production`.
 
 ## Known Limitations / Future Work
 
-- No signed URLs — files are stored in a public Supabase bucket
+- Further Storage Protections
 - No drag-and-drop upload interface
 - No file previews (images, PDFs)
 - No search or filter within folders
