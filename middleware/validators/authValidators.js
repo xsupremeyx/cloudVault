@@ -13,12 +13,14 @@ const validateSignUp = [
         .withMessage("Username may only contain letters, numbers, and underscores.")
         .bail()
         .custom(async (value) => {
-            const users = await prisma.user.findMany();
-
-            const duplicate = users.find(
-                user =>
-                    user.username.toLowerCase() === value.toLowerCase()
-            );
+            const duplicate = await prisma.user.findFirst({
+                where: {
+                    username: {
+                        equals: value,
+                        mode: "insensitive",
+                    },
+                },
+            });
 
             if (duplicate) {
                 throw new Error("Username is already taken.");
