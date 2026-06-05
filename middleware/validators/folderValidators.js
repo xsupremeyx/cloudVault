@@ -7,13 +7,28 @@ const validateFolder = [
         .isLength({ min: 1, max: 50 })
         .withMessage("Folder name must be 1-50 characters long.")
         .custom(async (value, { req }) => {
-            const parentId = req.body.parentId
-                ? parseInt(req.body.parentId, 10)
-                : null;
-
             const currentFolderId = req.params.id
                 ? parseInt(req.params.id, 10)
                 : null;
+
+            let parentId = req.body.parentId
+                ? parseInt(req.body.parentId, 10)
+                : null;
+
+            if (currentFolderId) {
+                const currentFolder = await prisma.folder.findUnique({
+                    where: {
+                        id: currentFolderId,
+                    },
+                    select: {
+                        parentId: true,
+                    },
+                });
+
+                if (currentFolder) {
+                    parentId = currentFolder.parentId;
+                }
+            }
 
             const folders = await prisma.folder.findMany({
                 where: {

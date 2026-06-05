@@ -1,5 +1,5 @@
 const { prisma } = require("../lib/prisma");
-
+const { SHARE_EXPIRATION_DAYS } = require("../config/share");
 const { buildSharedBreadcrumbs, isDescendantFolder } = require("../utils/folderTree");
 
 // helper
@@ -49,7 +49,7 @@ async function createShare(req, res, next) {
         }
 
         const expiresAt = new Date();
-        expiresAt.setDate(expiresAt.getDate() + 7);
+        expiresAt.setDate(expiresAt.getDate() + SHARE_EXPIRATION_DAYS);
 
         await prisma.share.upsert({
             where: {

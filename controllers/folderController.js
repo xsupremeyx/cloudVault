@@ -24,14 +24,22 @@ async function createFolder(req, res, next) {
                         children: true,
                         parent: true,
                         files: true,
+                        share: true,
                     },
                 });
 
                 const breadcrumbs = await buildBreadcrumbs(folder);
+                let shareUrl = null;
+
+                if (folder.share) {
+                    shareUrl =
+                        `${req.protocol}://${req.get("host")}/share/${folder.share.token}`;
+                }
 
                 return res.status(400).render("folder", {
                     folder,
                     breadcrumbs,
+                    shareUrl,
                     errors: errors.array(),
                     data: req.body,
                     formType: "childFolder",
@@ -154,6 +162,7 @@ async function renameFolder(req, res, next) {
                     children: true,
                     parent: true,
                     files: true,
+                    share: true,
                 },
             });
             folder.files.forEach(file => {
@@ -161,10 +170,17 @@ async function renameFolder(req, res, next) {
             });
 
             const breadcrumbs = await buildBreadcrumbs(folder);
+            let shareUrl = null;
+
+            if (folder.share) {
+                shareUrl =
+                    `${req.protocol}://${req.get("host")}/share/${folder.share.token}`;
+            }
 
             return res.status(400).render("folder", {
                 folder,
                 breadcrumbs,
+                shareUrl,
                 errors: errors.array(),
                 data: req.body,
                 formType: "rename",

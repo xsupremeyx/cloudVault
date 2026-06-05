@@ -38,6 +38,7 @@ app.use(
         saveUninitialized: false,
         cookie: {
             maxAge: 30*24*60*60*1000, // 30 days
+            secure: process.env.NODE_ENV === "production",
         },
     })
 );
@@ -66,14 +67,23 @@ app.use("/", indexRouter);
 
 // 404 handler
 app.use((req, res, next) => {
-    res.status(404).send("404 Not Found");
-})
+    const error = new Error("Page not found");
+    error.status = 404;
+    next(error);
+});
 
 // global error handler
 app.use((error, req, res, next) => {
     console.error(error);
-    res.status(error.status || 500).send(error.message || "Internal Server Error");
-})
+
+    const status = error.status || 500;
+
+    return res
+        .status(status)
+        .render("error", {
+            status,
+        });
+});
 
 const PORT = process.env.PORT || 3000
 app.listen(PORT, (err) => {
