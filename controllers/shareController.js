@@ -1,71 +1,28 @@
 const { prisma } = require("../lib/prisma");
 
+const { buildSharedBreadcrumbs, isDescendantFolder } = require("../utils/folderTree");
 
-async function isDescendantFolder(rootFolderId, targetFolderId) {
-    let currentFolder = await prisma.folder.findUnique({
+// helper
+async function getValidShare(token) {
+    const share = await prisma.share.findUnique({
         where: {
-            id: targetFolderId,
-        },
-        select: {
-            id: true,
-            parentId: true,
+            token,
         },
     });
 
-    while (currentFolder) {
-        if (currentFolder.id === rootFolderId) {
-            return true;
-        }
-
-        if (!currentFolder.parentId) {
-            return false;
-        }
-
-        currentFolder = await prisma.folder.findUnique({
-            where: {
-                id: currentFolder.parentId,
-            },
-            select: {
-                id: true,
-                parentId: true,
-            },
-        });
+    if (!share) {
+        const error = new Error("Share link not found");
+        error.status = 404;
+        throw error;
     }
 
-    return false;
-}
-
-async function buildSharedBreadcrumbs(
-    rootFolderId,
-    folder
-) {
-    const breadcrumbs = [];
-
-    let currentFolder = folder;
-
-    while (currentFolder) {
-        breadcrumbs.push({
-            id: currentFolder.id,
-            name: currentFolder.name,
-        });
-
-        if (currentFolder.id === rootFolderId) {
-            break;
-        }
-
-        currentFolder = await prisma.folder.findUnique({
-            where: {
-                id: currentFolder.parentId,
-            },
-            select: {
-                id: true,
-                name: true,
-                parentId: true,
-            },
-        });
+    if (share.expiresAt < new Date()) {
+        const error = new Error("Share link has expired");
+        error.status = 410;
+        throw error;
     }
 
-    return breadcrumbs.reverse();
+    return share;
 }
 
 async function createShare(req, res, next) {
@@ -117,23 +74,7 @@ async function getSharedFolder(req, res, next) {
     try {
         const { token } = req.params;
 
-        const share = await prisma.share.findUnique({
-            where: {
-                token,
-            },
-        });
-
-        if (!share) {
-            const error = new Error("Share link not found");
-            error.status = 404;
-            throw error;
-        }
-
-        if (share.expiresAt < new Date()) {
-            const error = new Error("Share link has expired");
-            error.status = 410;
-            throw error;
-        }
+        const share = await getValidShare(token);
 
         const folder = await prisma.folder.findUnique({
             where: {
@@ -180,23 +121,7 @@ async function getSharedSubfolder(req, res, next) {
             throw error;
         }
 
-        const share = await prisma.share.findUnique({
-            where: {
-                token,
-            },
-        });
-
-        if (!share) {
-            const error = new Error("Share link not found");
-            error.status = 404;
-            throw error;
-        }
-
-        if (share.expiresAt < new Date()) {
-            const error = new Error("Share link has expired");
-            error.status = 410;
-            throw error;
-        }
+        const share = await getValidShare(token);
 
         const allowed = await isDescendantFolder(
             share.folderId,
@@ -254,23 +179,7 @@ async function downloadSharedFile(req, res, next) {
             throw error;
         }
 
-        const share = await prisma.share.findUnique({
-            where: {
-                token,
-            },
-        });
-
-        if (!share) {
-            const error = new Error("Share link not found");
-            error.status = 404;
-            throw error;
-        }
-
-        if (share.expiresAt < new Date()) {
-            const error = new Error("Share link has expired");
-            error.status = 410;
-            throw error;
-        }
+        const share = await getValidShare(token);
 
         const file = await prisma.file.findUnique({
             where: {
