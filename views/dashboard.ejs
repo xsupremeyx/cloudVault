@@ -1,35 +1,100 @@
-<%- include("partials/header", { title: "Dashboard" }) %>
-
-<div class="page-container">
-    <h1>Dashboard</h1>
-    <p>Welcome, <%= currentUser.username %></p>
-    <div>
-        <h2>Your Folders</h2>
-        <% if (folders && folders.length > 0) { %>
-            <ul>
-                <% folders.forEach(folder => { %>
-                    <li>
-                        <a href="/folders/<%= folder.id %>"><%= folder.name %></a>
-                    </li>
-                <% }) %>
-            </ul>
-        <% } else { %>
-            <p>You have no folders yet.</p>
-        <% } %>
+<style>
+  /* dashboard.ejs — folder grid (scoped to this view) */
+  .folder-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-4); margin-bottom: var(--space-8); }
+  @media (max-width: 640px) { .folder-grid { grid-template-columns: 1fr; } }
+  .folder-card { display: flex; flex-direction: column; gap: var(--space-2); text-decoration: none; color: inherit; }
+  .folder-card:hover { text-decoration: none; }
+</style>
+<%- include("partials/header", { title: "Dashboard — CloudVault" }) %>
+<main class="main-content">
+  <div class="container">
+    <!-- ── Page header ── -->
+    <div class="page-header">
+      <h1>Dashboard</h1>
+      <p>Welcome back, <strong><%= currentUser.username %></strong></p>
     </div>
-    <form action="/folders" method="POST">
-        <%- include("partials/error") %>
-        <h2>
-            Create a New Folder
-        </h2>
-
-        <% const nameError = errors.find(error => error.path === "name") %>
-        <div>
-            <label for="name">Folder Name:</label>
-            <input type="text" id="name" name="name" value="<%= data.name || '' %>" class="<%= nameError ? 'input-error' : '' %>" required>
+    <!-- ── Folders section heading ── -->
+    <h2 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--color-text-primary); margin-bottom: var(--space-5);">
+      Your Folders
+    </h2>
+    <% if (folders && folders.length > 0) { %>
+      <!-- Folder grid -->
+      <div class="folder-grid" role="list">
+        <% folders.forEach(function(folder) { %>
+          <a href="/folders/<%= folder.id %>" class="card folder-card" role="listitem" aria-label="Open folder <%= folder.name %>">
+            <!-- Folder icon -->
+            <div style="
+              width: 44px;
+              height: 44px;
+              background-color: var(--color-accent-subtle);
+              border-radius: var(--radius-lg);
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              flex-shrink: 0;
+            ">
+              <i data-lucide="folder" style="width:22px;height:22px;color:var(--color-accent);" aria-hidden="true"></i>
+            </div>
+            <!-- Folder name -->
+            <p style="
+              font-size: var(--text-base);
+              font-weight: var(--font-semibold);
+              color: var(--color-text-primary);
+              margin: 0;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            ">
+              <%= folder.name %>
+            </p>
+            <!-- Created date -->
+            <p style="font-size: var(--text-xs); color: var(--color-text-muted); margin: 0;">
+              Created <%= new Date(folder.createdAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+            </p>
+          </a>
+        <% }) %>
+      </div>
+    <% } else { %>
+      <!-- Empty state -->
+      <div class="empty-state" style="margin-bottom: var(--space-8);">
+        <div class="empty-state-icon">
+          <i data-lucide="folder-open" style="width:28px;height:28px;" aria-hidden="true"></i>
         </div>
-        <button type="submit">Create Folder</button>
-    </form>
-</div>
-
+        <h3>No folders yet</h3>
+        <p>Create your first one below.</p>
+      </div>
+    <% } %>
+    <!-- ── Create folder card ── -->
+    <div class="card" style="max-width: 480px;">
+      <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+        <h2 class="card-title">Create New Folder</h2>
+        <p class="card-subtitle">Give your folder a name to get started.</p>
+      </div>
+      <form action="/folders" method="POST" novalidate>
+        <%- include("partials/error") %>
+        <% const nameError = errors.find(error => error.path === "name") %>
+        <div class="form-group">
+          <label for="name">Folder Name</label>
+          <input
+            type="text"
+            id="name"
+            name="name"
+            value="<%= data.name || '' %>"
+            class="<%= nameError ? 'input-error' : '' %>"
+            placeholder="e.g. Work Documents"
+            autocomplete="off"
+            required
+          >
+          <% if (nameError) { %>
+            <span class="field-error"><%= nameError.msg %></span>
+          <% } %>
+        </div>
+        <button type="submit" class="btn btn-primary">
+          <i data-lucide="folder-plus" style="width:15px;height:15px;" aria-hidden="true"></i>
+          Create Folder
+        </button>
+      </form>
+    </div>
+  </div>
+</main>
 <%- include("partials/footer") %>

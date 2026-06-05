@@ -1,7 +1,59 @@
 <%- include("partials/header", { title: "CloudVault" }) %>
-
-<div class="page-container">
-    <h1>CloudVault</h1>
-</div>
-
-<%- include("partials/footer") %>
+    <main class="main-content">
+        <div class="container" style="
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: calc(100vh - var(--navbar-height) - 160px);
+    text-align: center;
+    padding-block: var(--space-16);
+  ">
+            <!-- Brand mark -->
+            <div style="
+      width: 68px;
+      height: 68px;
+      background-color: var(--color-accent);
+      border-radius: var(--radius-xl);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: var(--space-6);
+      box-shadow: var(--shadow-md);
+    ">
+                <i data-lucide="cloud" style="width:34px;height:34px;color:#fff;" aria-hidden="true"></i>
+            </div>
+            <!-- Headline -->
+            <h1 style="
+      font-size: clamp(var(--text-3xl), 5vw, var(--text-4xl));
+      margin-bottom: var(--space-4);
+      max-width: 20ch;
+    ">
+                Your files, securely stored.
+            </h1>
+            <!-- Subheading -->
+            <p style="
+      font-size: var(--text-lg);
+      color: var(--color-text-secondary);
+      max-width: 44ch;
+      line-height: var(--leading-relaxed);
+      margin-bottom: var(--space-8);
+    ">
+                Upload, organise, and share your documents — all in one place.
+                Simple, private, and always accessible.
+            </p>
+            <!-- CTA buttons -->
+            <% if (!currentUser) { %>
+                <div style="display: flex; gap: var(--space-3); flex-wrap: wrap; justify-content: center;">
+                    <a href="/sign-up" class="btn btn-primary btn-lg">
+                        <i data-lucide="arrow-right" style="width:16px;height:16px;" aria-hidden="true"></i>
+                        Get Started
+                    </a>
+                    <a href="/log-in" class="btn btn-secondary btn-lg">Log In</a>
+                </div>
+                <% } else { %>
+                    <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                    <% } %>
+        </div>
+    </main>
+    <%- include("partials/footer") %>

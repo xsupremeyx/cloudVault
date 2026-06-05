@@ -1,7 +1,7 @@
 <% if (locals.errors && errors.length > 0) { %>
-    <ul>
-        <% errors.forEach(error => { %>
-            <li><%= error.msg %></li>
-        <% }) %>
-    </ul>
+  <div class="alert alert-error" role="alert" aria-live="polite" style="margin-bottom: var(--space-5);">
+    <% errors.forEach(function(error) { %>
+      <p style="margin: 0;"><%= error.msg %></p>
+    <% }) %>
+  </div>
 <% } %>

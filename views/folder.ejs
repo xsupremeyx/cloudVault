@@ -1,155 +1,451 @@
-<%- include("partials/header", { title: folder.name }) %>
+<style>
 
-<h1><%= folder.name %></h1>
+  .breadcrumb {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    font-size: var(--text-sm);
+    color: var(--color-text-muted);
+    margin-bottom: var(--space-5);
+    flex-wrap: wrap;
+  }
+  .breadcrumb a {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    color: var(--color-text-secondary);
+    text-decoration: none;
+    transition: color var(--transition-fast);
+  }
+  .breadcrumb a:hover { color: var(--color-text-primary); text-decoration: none; }
+  .breadcrumb-sep { color: var(--color-border-hover); user-select: none; }
+  .breadcrumb [aria-current="page"] {
+    color: var(--color-text-primary);
+    font-weight: var(--font-medium);
+  }
 
-<p>
-    <a href="/dashboard">Dashboard</a>
+  .folder-actions { display: flex; gap: var(--space-3); flex-wrap: wrap; margin-bottom: var(--space-6); }
 
-    <% breadcrumbs.forEach(crumb => { %>
-        /
-        <a href="/folders/<%= crumb.id %>">
-            <%= crumb.name %>
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+  }
+  @media (max-width: 900px) { .action-grid { grid-template-columns: 1fr 1fr; } }
+  @media (max-width: 580px) { .action-grid { grid-template-columns: 1fr; } }
+
+  .section { margin-bottom: var(--space-8); }
+  .section-header { display: flex; align-items: center; gap: var(--space-3); margin-bottom: var(--space-4); }
+
+  .section-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 420px;
+    gap: var(--space-4);
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .section-layout {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .subfolder-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: var(--space-3); }
+  @media (max-width: 640px) { .subfolder-grid { grid-template-columns: 1fr; } }
+  .subfolder-card { display: flex; flex-direction: row; align-items: center; gap: var(--space-3); text-decoration: none; color: inherit; min-height: 72px;}
+  .subfolder-card:hover { text-decoration: none; }
+
+  .file-table { width: 100%; border-collapse: collapse; }
+  .file-table th,
+  .file-table td {
+    padding: var(--space-3) var(--space-4);
+    text-align: left;
+    border-bottom: 1px solid var(--color-border);
+    font-size: var(--text-sm);
+  }
+  .file-table th {
+    font-weight: var(--font-semibold);
+    color: var(--color-text-secondary);
+    background: var(--color-surface-alt);
+    white-space: nowrap;
+  }
+  .file-table tbody tr { transition: background-color var(--transition-fast); }
+  .file-table tbody tr:hover { background-color: var(--color-surface-alt); }
+  .file-table tbody tr:last-child td { border-bottom: none; }
+
+  .share-url-box { display: flex; gap: var(--space-2); align-items: center; }
+  .share-url-input { flex: 1; font-family: var(--font-mono); font-size: var(--text-sm); }
+  .page-header {
+  margin-bottom: var(--space-6);
+    }
+</style>
+
+<%- include("partials/header", { title: folder.name + " — CloudVault" }) %>
+
+<main class="main-content">
+  <div class="container">
+    <nav class="breadcrumb" aria-label="Folder breadcrumb">
+
+      <% if (breadcrumbs.length === 1) { %>
+        <i data-lucide="home" style="width:14px;height:14px;" aria-hidden="true"></i>
+        <span aria-current="page"><%= breadcrumbs[0].name %></span>
+
+      <% } else { %>
+        <a href="/folders/<%= breadcrumbs[0].id %>">
+          <i data-lucide="home" style="width:14px;height:14px;" aria-hidden="true"></i>
+          <%= breadcrumbs[0].name %>
         </a>
-    <% }) %>
-</p>
 
-<p>Created: <%= folder.createdAt.toLocaleDateString() %></p><h2>Child Folders</h2>
+        <% breadcrumbs.slice(1, -1).forEach(function(crumb) { %>
+          <span class="breadcrumb-sep" aria-hidden="true">/</span>
+          <a href="/folders/<%= crumb.id %>"><%= crumb.name %></a>
+        <% }) %>
 
-<% if (folder.children.length > 0) { %>
-    <ul>
-        <% folder.children.forEach(child => { %>
-            <li>
-                <a href="/folders/<%= child.id %>">
-                    <%= child.name %>
+        <span class="breadcrumb-sep" aria-hidden="true">/</span>
+        <span aria-current="page"><%= breadcrumbs[breadcrumbs.length - 1].name %></span>
+
+      <% } %>
+    </nav>
+
+    <div class="page-header" style="display: flex; align-items: center; gap: var(--space-3);">
+      <div style="
+        width: 52px;
+        height: 52px;
+        background-color: var(--color-accent-subtle);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-xs);
+      ">
+        <i data-lucide="folder" style="width:26px;height:26px;color:var(--color-accent);" aria-hidden="true"></i>
+      </div>
+      <div>
+        <h1 style="margin: 0; line-height: var(--leading-tight);"><%= folder.name %></h1>
+      </div>
+    </div>
+
+    <div class="action-grid">
+
+      <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+          <h2 class="card-title" style="font-size: var(--text-base);">
+            Rename Folder
+          </h2>
+        </div>
+
+        <% if (formType === "rename") { %>
+          <%- include("partials/error") %>
+        <% } %>
+
+        <form action="/folders/<%= folder.id %>/edit" method="POST" novalidate>
+          <%
+            var renameError = (formType === "rename") ? errors.find(function(e) { return e.path === "name"; }) : null;
+          %>
+          <div class="form-group">
+            <label for="renameInput">New Name</label>
+            <input
+              type="text"
+              id="renameInput"
+              name="name"
+              value="<%= data.name || folder.name %>"
+              class="<%= renameError ? 'input-error' : '' %>"
+              placeholder="Folder name"
+              required
+            >
+            <% if (renameError) { %>
+              <span class="field-error"><%= renameError.msg %></span>
+            <% } %>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">Save Name</button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+          <h2 class="card-title" style="font-size: var(--text-base);">
+            Delete Folder
+            </h2>
+          <p class="card-subtitle">Permanently removes this folder and all its contents.</p>
+        </div>
+        <form action="/folders/<%= folder.id %>/delete" method="POST">
+          <button
+            type="submit"
+            class="btn btn-danger btn-sm"
+            onclick="return confirm('Delete this folder and all its contents?')"
+          >
+            Delete Folder
+          </button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+          <h2 class="card-title" style="font-size: var(--text-base);">
+            Share Folder
+            </h2>
+        </div>
+
+        <% if (shareUrl) { %>
+          <div class="share-url-box" style="margin-bottom: var(--space-3);">
+            <input
+              type="text"
+              class="share-url-input"
+              value="<%= shareUrl %>"
+              readonly
+              aria-label="Share URL"
+            >
+            <button
+              type="button"
+              class="btn btn-secondary btn-sm"
+              data-copy-url="<%= shareUrl %>"
+              onclick="(function(b){var u=b.dataset.copyUrl;var ok=function(){b.textContent='Copied!';setTimeout(function(){b.textContent='Copy Link';},2000);};if(navigator.clipboard){navigator.clipboard.writeText(u).then(ok);}else{var el=document.createElement('textarea');el.value=u;document.body.appendChild(el);el.select();document.execCommand('copy');document.body.removeChild(el);ok();}})(this)"
+              aria-label="Copy share link to clipboard"
+            >
+              Copy Link
+            </button>
+          </div>
+          <form action="/folders/<%= folder.id %>/share" method="POST">
+            <button type="submit" class="btn btn-ghost btn-sm">
+              <i data-lucide="refresh-cw" style="width:13px;height:13px;" aria-hidden="true"></i>
+              Regenerate Link
+            </button>
+          </form>
+
+        <% } else { %>
+          <p style="font-size: var(--text-sm); color: var(--color-text-secondary); margin-bottom: var(--space-4);">
+            Generate a public link so others can view this folder.
+          </p>
+          <form action="/folders/<%= folder.id %>/share" method="POST">
+            <button type="submit" class="btn btn-secondary btn-sm">
+              <i data-lucide="link" style="width:13px;height:13px;" aria-hidden="true"></i>
+              Generate Share Link
+            </button>
+          </form>
+        <% } %>
+      </div>
+
+    </div>
+
+
+    <div class="section">
+      <div class="section-header">
+        <h2 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0;">
+          Subfolders
+        </h2>
+        <span class="badge badge-gray"><%= (folder.children ? folder.children.length : 0) %></span>
+      </div>
+
+      <div class="section-layout">
+
+        <div>
+          <% if (folder.children && folder.children.length > 0) { %>
+            <div class="subfolder-grid">
+              <% folder.children.forEach(function(subFolder) { %>
+                <a href="/folders/<%= subFolder.id %>" class="card subfolder-card" aria-label="Open subfolder: <%= subFolder.name %>">
+                  <div style="
+                    width: 36px;
+                    height: 36px;
+                    background-color: var(--color-accent-subtle);
+                    border-radius: var(--radius-lg);
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    flex-shrink: 0;
+                  ">
+                    <i data-lucide="folder" style="width:18px;height:18px;color:var(--color-accent);" aria-hidden="true"></i>
+                  </div>
+                  <p style="
+                    font-size: var(--text-sm);
+                    font-weight: var(--font-semibold);
+                    color: var(--color-text-primary);
+                    margin: 0;
+                    overflow: hidden;
+                    text-overflow: ellipsis;
+                    white-space: nowrap;
+                  ">
+                    <%= subFolder.name %>
+                  </p>
+                  <p style="
+                        margin: 0;
+                        font-size: var(--text-xs);
+                        color: var(--color-text-muted);
+                    ">
+                        Folder
+                    </p>
                 </a>
-            </li>
-        <% }) %>
-    </ul>
-<% } else { %>
-    <p>No child folders yet.</p>
-<% } %>
+              <% }) %>
+            </div>
+          <% } else { %>
+            <div class="empty-state" style="padding: var(--space-8) var(--space-6);">
+              <div class="empty-state-icon">
+                <i data-lucide="folder-open" style="width:26px;height:26px;" aria-hidden="true"></i>
+              </div>
+              <h3>No subfolders</h3>
+              <p>Create a subfolder to organise this folder's contents.</p>
+            </div>
+          <% } %>
+        </div>
 
+        <div class="card" style="max-width:360px;">
+          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+            <h3 class="card-title" style="font-size: var(--text-base);">Create Subfolder</h3>
+          </div>
 
-<form action="/folders" method="POST">
-    <% if (formType === "childFolder") { %>
-        <%- include("partials/error") %>
-    <% } %>
-    <h2>Create Child Folder</h2>
-    <%
-    const childFolderNameError =
-        formType === "childFolder"
-            ? errors.find(error => error.path === "name")
-            : null;
-    %>
-    <input type="hidden" name="parentId" value="<%= folder.id %>">
-    <div>
-        <label for="child-name">Folder Name:</label>
-        <input type="text" id="child-name" name="name" value="<%= formType === 'childFolder' ? (data.name || '') : '' %>" class="<%= childFolderNameError ? 'input-error' : '' %>" required>
+          <% if (formType === "childFolder") { %>
+            <%- include("partials/error") %>
+          <% } %>
+
+          <form action="/folders" method="POST" novalidate>
+            <input type="hidden" name="parentId" value="<%= folder.id %>">
+            <%
+              var subNameError = (formType === "childFolder") ? errors.find(function(e) { return e.path === "name"; }) : null;
+            %>
+            <div class="form-group">
+              <label for="subfolderName">Subfolder Name</label>
+              <input
+                type="text"
+                id="subfolderName"
+                name="name"
+                class="<%= subNameError ? 'input-error' : '' %>"
+                placeholder="e.g. Invoices"
+                required
+              >
+              <% if (subNameError) { %>
+                <span class="field-error"><%= subNameError.msg %></span>
+              <% } %>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i data-lucide="folder-plus" style="width:13px;height:13px;" aria-hidden="true"></i>
+              Create Subfolder
+            </button>
+          </form>
+        </div>
+
+      </div>
     </div>
-    <button type="submit">Create Child Folder</button>
-</form>
 
-<h2>Files</h2>
+    <div class="section">
+      <div class="section-header">
+        <h2 style="font-size: var(--text-xl); font-weight: var(--font-semibold); color: var(--color-text-primary); margin: 0;">
+          Files
+        </h2>
+        <span class="badge badge-gray"><%= (folder.files ? folder.files.length : 0) %></span>
+      </div>
 
-<% if (folder.files.length > 0) { %>
-    <ul>
-        <% folder.files.forEach(file => { %>
-            <li>
-                <strong><%= file.name %></strong>
+      <div class="section-layout">
 
-                <ul>
-                    <li>Type: <%= file.mimeType %></li>
-                    <li>Size: <%= file.formattedSize %></li>
-                    <li>Uploaded: <%= file.uploadedAt.toLocaleString() %></li>
-                    <li>
-                        <a href="/folders/files/<%= file.id %>/download">
+        <div>
+          <% if (folder.files && folder.files.length > 0) { %>
+            <div class="table-wrapper">
+              <table class="file-table">
+                <thead>
+                  <tr>
+                    <th>Name</th>
+                    <th>Size</th>
+                    <th>Type</th>
+                    <th>Uploaded</th>
+                    <th style="text-align: right;">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <% folder.files.forEach(function(file) { %>
+                    <tr>
+                      <td style="max-width: 220px;">
+                        <div style="display: flex; align-items: center; gap: var(--space-2);">
+                          <i data-lucide="file" style="width:14px;height:14px;color:var(--color-text-muted);flex-shrink:0;" aria-hidden="true"></i>
+                          <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: block;">
+                            <%= file.name %>
+                          </span>
+                        </div>
+                      </td>
+                      <td style="white-space: nowrap; color: var(--color-text-secondary);">
+                        <%= file.formattedSize %>
+                      </td>
+                      <td>
+                        <span class="badge badge-gray">
+                          <%= file.mimeType ? (file.mimeType.split('/')[1] || file.mimeType) : '—' %>
+                        </span>
+                      </td>
+                      <td style="white-space: nowrap; color: var(--color-text-secondary);">
+                        <%= new Date(file.uploadedAt).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' }) %>
+                      </td>
+                      <td style="text-align: right;">
+                        <div style="display: flex; gap: var(--space-2); justify-content: flex-end; align-items: center; flex-wrap: nowrap;">
+                          <a
+                            href="/folders/files/<%= file.id %>/download"
+                            class="btn btn-secondary btn-sm"
+                            aria-label="Download <%= file.name %>"
+                          >
+                            <i data-lucide="download" style="width:13px;height:13px;" aria-hidden="true"></i>
                             Download
-                        </a>
-                    </li>
-                    <li>
-                        <form action="/folders/files/<%= file.id %>/delete" method="POST">
-                            <button type="submit">Delete</button>
-                        </form>
-                    </li>
-                </ul>
-            </li>
-        <% }) %>
-    </ul>
-<% } else { %>
-    <p>No files uploaded yet.</p>
-<% } %>
+                          </a>
+                          <form action="/folders/files/<%= file.id %>/delete" method="POST" style="margin: 0; padding: 0;">
+                            <button
+                              type="submit"
+                              class="btn btn-danger btn-sm"
+                              onclick="return confirm('Delete this file?')"
+                              aria-label="Delete <%= file.name %>"
+                            >
+                              <i data-lucide="trash-2" style="width:13px;height:13px;" aria-hidden="true"></i>
+                              Delete
+                            </button>
+                          </form>
+                        </div>
+                      </td>
+                    </tr>
+                  <% }) %>
+                </tbody>
+              </table>
+            </div>
+          <% } else { %>
+            <div class="empty-state" style="padding: var(--space-8) var(--space-6);">
+              <div class="empty-state-icon">
+                <i data-lucide="file-x" style="width:26px;height:26px;" aria-hidden="true"></i>
+              </div>
+              <h3>No files uploaded yet</h3>
+              <p>Upload your first file using the form on the right.</p>
+            </div>
+          <% } %>
+        </div>
+        <div class="card" style="max-width:360px;">
+          <div class="card-header" style="flex-direction: column; align-items: flex-start; gap: var(--space-1);">
+            <h3 class="card-title" style="font-size: var(--text-base);">Upload File</h3>
+            <p class="card-subtitle">Select a file from your device to add to this folder.</p>
+          </div>
 
-<form action="/folders/<%= folder.id %>/files" method="POST" enctype="multipart/form-data">
-    <h2>Upload File</h2>
+          <% if (formType === "upload") { %>
+            <%- include("partials/error") %>
+          <% } %>
+          <form action="/folders/<%= folder.id %>/files" method="POST" enctype="multipart/form-data" novalidate>
+            <%
+              var uploadError = (formType === "upload") ? errors.find(function(e) { return e.path === "file"; }) : null;
+            %>
+            <div class="form-group">
+              <label for="fileUploadInput">Choose File</label>
+              <input
+                type="file"
+                id="fileUploadInput"
+                name="file"
+                class="<%= uploadError ? 'input-error' : '' %>"
+                required
+              >
+              <% if (uploadError) { %>
+                <span class="field-error"><%= uploadError.msg %></span>
+              <% } %>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">
+              <i data-lucide="upload" style="width:13px;height:13px;" aria-hidden="true"></i>
+              Upload File
+            </button>
+          </form>
+        </div>
 
-    <% if (formType === "upload") { %>
-        <%- include("partials/error") %>
-    <% } %>
-
-    <div>
-        <label for="file">Choose File:</label>
-        <input type="file" id="file" name="file" required>
+      </div>
     </div>
 
-    <p>
-        Allowed types: JPG, PNG, WEBP, PDF, TXT.
-        Maximum size: 10 MB.
-    </p>
-
-    <button type="submit">Upload</button>
-</form>
-
-
-<form action="/folders/<%= folder.id %>/edit" method="POST">
-    <% if (formType === "rename") { %>
-        <%- include("partials/error") %>
-    <% } %>
-
-    <% const renameNameError = formType === "rename" ? errors.find(error => error.path === "name") : null; %>
-    <div>
-        <label for="name">Rename Folder:</label>
-        <input type="text" id="name" name="name" value="<%= formType === 'rename' ? (data.name || '') : folder.name%>" class="<%= renameNameError ? 'input-error' : '' %>" required>
-    </div>
-    <button type="submit">Rename</button>
-</form>
-
-<form action="/folders/<%= folder.id %>/delete" method="POST">
-    <button type="submit">Delete Folder</button>
-</form>
-
-<form action="/folders/<%= folder.id %>/share" method="POST">
-    <button type="submit">
-        <%= shareUrl ? "Refresh Share Link" : "Create Share Link" %>
-    </button>
-</form>
-
-<% if (shareUrl) { %>
-    <div>
-        <p>Share Link:</p>
-
-        <input
-            type="text"
-            id="share-url"
-            value="<%= shareUrl %>"
-            readonly
-        >
-
-        <button
-            type="button"
-            onclick="copyShareLink()"
-        >
-            Copy
-        </button>
-    </div>
-
-    <script>
-        function copyShareLink() {
-            const input =
-                document.getElementById("share-url");
-
-            navigator.clipboard.writeText(input.value);
-        }
-    </script>
-<% } %>
+  </div>
+</main>
 
 <%- include("partials/footer") %>
