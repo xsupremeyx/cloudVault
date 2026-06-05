@@ -1,312 +1,292 @@
-# CloudVault — Project Context
+# CloudVault
 
-Odin Project: File Uploader. Stripped-down Google Drive clone.
+A full-stack cloud storage application built as part of [The Odin Project](https://www.theodinproject.com/) File Uploader assignment.
 
----
+CloudVault lets authenticated users create folders, upload files, and share folders publicly through expiring read-only share links — all backed by Supabase Storage and a PostgreSQL database.
 
-## Stack
-- **Runtime:** Node.js (ESM — `"type": "module"` in package.json)
-- **Framework:** Express
-- **ORM:** Prisma + `@prisma/adapter-pg` + `pg`
-- **Templating:** EJS + partials (header / navbar / footer)
-- **Styling:** Plain CSS, CSS variables, dark mode, Fira Code
-- **Auth:** Passport.js LocalStrategy + bcryptjs + connect-flash
-- **Sessions:** `prisma-session-store` (persists to DB)
-- **File upload:** multer (local → then Supabase Storage)
-- **Cloud storage:** Supabase Storage (swap in after core features work)
-- **Validation:** express-validator
-- **Extra credit:** Shared folder links with UUID token + expiry
+**Live demo:** https://cloudvault-tcp5.onrender.com/
 
 ---
 
-## Folder Structure
+## Features
+
+**Authentication**
+- Sign up, log in, log out
+- Passport.js Local Strategy with bcrypt password hashing
+- Session persistence via Prisma Session Store
+
+**Folder management**
+- Create, rename, and delete folders
+- Unlimited nesting depth — folders can contain subfolders to any level
+- Recursive deletion — removing a folder removes all descendant folders and their files from both the database and Supabase Storage
+- Breadcrumb navigation at every level
+
+**File management**
+- Upload files (JPG, PNG, WEBP, PDF, TXT — max 10 MB)
+- Download files
+- Delete files
+- Human-readable file sizes
+
+**Public sharing**
+- Generate a public share link for any folder (UUID token)
+- Read-only shared view — browse subfolders, download files, no editing
+- Shared links expire after 7 days and can be regenerated
+- Shared breadcrumb navigation works across the full shared subtree
+- Copy-to-clipboard share link button
+
+**UI**
+- Modern SaaS-style design with Inter font and Lucide icons
+- Card-based layout with responsive grid
+- Mobile-first responsive design
+- Confirmation modal for all destructive actions (delete folder, delete file)
+- Inline and summary validation error display
+- Empty states for folders and files
+
+---
+
+## Tech Stack
+
+| Layer | Technology |
+|---|---|
+| Runtime | Node.js |
+| Framework | Express |
+| Templating | EJS |
+| Authentication | Passport.js (Local Strategy) + express-session |
+| ORM | Prisma |
+| Database | PostgreSQL (hosted on Supabase) |
+| Storage | Supabase Storage |
+| Uploads | Multer (memory storage) |
+| Validation | express-validator |
+| Icons | Lucide (CDN) |
+| Deployment | Render |
+
+---
+
+## Architecture
+
 ```
-app.js
-routes/
-  authRouter.js
-  folders/
-    foldersRouter.js
-  files/
-    filesRouter.js
-  shareRouter.js
-controllers/
-  authController.js
-  foldersController.js
-  filesController.js
-  shareController.js
-middleware/
-  auth.js          ← ensureLoggedIn guard
-  validate.js      ← all express-validator arrays
-lib/
-  prisma.js        ← Prisma singleton (ESM)
-  supabase.js      ← Supabase client singleton
-prisma/
-  schema.prisma
-generated/
-  prisma/          ← generated client (gitignored)
-views/
-  dashboard.ejs    ← root folder view (all top-level folders)
-  folder.ejs       ← folder contents view
-  file.ejs         ← file detail view
-  sign-up.ejs
-  log-in.ejs
-  share.ejs        ← public shared folder view (no auth)
-  partials/
-    header.ejs
-    navbar.ejs
-    footer.ejs
-    error.ejs
-public/
-  styles.css
-uploads/           ← local temp storage (gitignored, pre-Supabase)
-.env
-.env.example
-```
+┌─────────────────────────────────────────────────────────────┐
+│                         Browser                             │
+└──────────────────────────┬──────────────────────────────────┘
+                           │ HTTP
+                           ▼
+┌─────────────────────────────────────────────────────────────┐
+│                    Express (app.js)                         │
+│                                                             │
+│  ┌─────────────────┐  ┌──────────────┐  ┌───────────────┐   │
+│  │ Session Middle  │  │  Passport.js │  │  res.locals   │   │
+│  │ware (Prisma     │→ │  (deseriali- │→ │  currentUser  │   │
+│  │ Session Store)  │  │   zeUser)    │  │  on every req │   │
+│  └─────────────────┘  └──────────────┘  └───────────────┘   │
+│                                                             │
+│  ┌──────────┐  ┌─────────────┐  ┌───────────┐               │
+│  │    /     │  │  /folders   │  │  /share   │               │
+│  │ indexR.  │  │  folderR.   │  │  shareR.  │               │
+│  └──────────┘  └─────────────┘  └───────────┘               │
+└─────────────────────────────────────────────────────────────┘
 
----
 
-## Prisma Schema
+Browser
+  │
+  ▼
+Express (app.js)
+  ├── Session middleware (Prisma Session Store)
+  ├── Passport.js authentication
+  └── Routers
+        ├── /             → index, dashboard
+        ├── /folders      → folder CRUD, file upload/download/delete, share creation
+        └── /share        → public read-only shared folder views + file downloads
 
-```prisma
-generator client {
-  provider = "prisma-client-js"
-  output   = "../generated/prisma"
-}
+File Upload Flow
+  Multer (memory) → Supabase Storage → Prisma file record → redirect
 
-datasource db {
-  provider = "postgresql"
-}
-
-model User {
-  id        Int      @id @default(autoincrement())
-  username  String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  folders   Folder[]
-  files     File[]
-}
-
-model Folder {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  parent    Folder?  @relation("FolderChildren", fields: [parentId], references: [id], onDelete: Cascade)
-  parentId  Int?
-  children  Folder[] @relation("FolderChildren")
-  files     File[]
-  share     Share?
-}
-
-model File {
-  id         Int      @id @default(autoincrement())
-  name       String
-  size       Int
-  mimeType   String
-  url        String   // Supabase public URL (empty string until Phase 6)
-  uploadedAt DateTime @default(now())
-  folder     Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId   Int
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId     Int
-}
-
-model Share {
-  id        Int      @id @default(autoincrement())
-  token     String   @unique @default(uuid())
-  expiresAt DateTime
-  folder    Folder   @relation(fields: [folderId], references: [id], onDelete: Cascade)
-  folderId  Int      @unique
-}
+Share Flow
+  POST /folders/:id/share → upsert Share record → UUID token
+  GET  /share/:token      → validate token + expiry → read-only render
 ```
 
-> Session table is auto-created by `prisma-session-store` — no model needed.
+**Ownership validation** is applied consistently across all protected routes:
+```js
+where: { id: resourceId, userId: req.user.id }
+```
+
+**Shared tree security** — the `isDescendantFolder()` helper prevents access to folders outside the shared subtree, even with a valid token.
 
 ---
 
-## Routes
+## Project Structure
 
-| Method | Path | Auth | Description |
-|--------|------|------|-------------|
-| GET | `/sign-up` | guest | Sign-up form |
-| POST | `/sign-up` | guest | Create user |
-| GET | `/log-in` | guest | Log-in form |
-| POST | `/log-in` | guest | Passport authenticate |
-| GET | `/log-out` | user | Destroy session |
-| GET | `/` | user | Dashboard — top-level folders |
-| POST | `/folders` | user | Create folder (parentId optional) |
-| GET | `/folders/:id` | user | View folder contents |
-| POST | `/folders/:id/edit` | user | Rename folder |
-| POST | `/folders/:id/delete` | user | Delete folder (cascades files) |
-| POST | `/folders/:id/share` | user | Create/update share link with expiry |
-| POST | `/folders/:id/files` | user | Upload file into folder (multer) |
-| GET | `/files/:id` | user | File detail (name, size, date, download btn) |
-| GET | `/files/:id/download` | user | Stream/redirect to file URL |
-| POST | `/files/:id/delete` | user | Delete file (Supabase + DB row) |
-| GET | `/share/:token` | public | View shared folder (check expiry) |
+```
+cloudVault/
+├── app.js
+├── config/
+│   ├── multer.js
+│   ├── passport.js
+│   └── share.js
+├── controllers/
+│   ├── authController.js
+│   ├── fileController.js
+│   ├── folderController.js
+│   ├── indexController.js
+│   └── shareController.js
+├── lib/
+│   ├── prisma.js
+│   ├── storage.js
+│   └── supabase.js
+├── middleware/
+│   ├── authMiddleware.js
+│   ├── uploadMiddleware.js
+│   └── validators/
+│       ├── authValidators.js
+│       └── folderValidators.js
+├── prisma/
+│   └── schema.prisma
+├── public/
+│   ├── styles.css
+│   └── js/
+│       └── confirm-modal.js
+├── routes/
+│   ├── authRouter.js
+│   ├── indexRouter.js
+│   ├── shareRouter.js
+│   └── folders/
+│       └── folderRouter.js
+├── utils/
+│   ├── folderTree.js
+│   └── formatFileSize.js
+└── views/
+    ├── dashboard.ejs
+    ├── error.ejs
+    ├── folder.ejs
+    ├── index.ejs
+    ├── log-in.ejs
+    ├── share.ejs
+    ├── sign-up.ejs
+    └── partials/
+        ├── confirm-modal.ejs
+        ├── error.ejs
+        ├── footer.ejs
+        ├── header.ejs
+        └── navbar.ejs
+```
 
 ---
 
-## Key Packages
+## Database Schema
 
-```bash
-npm install express ejs express-validator \
-  passport passport-local bcryptjs connect-flash \
-  express-session @prisma/client @prisma/adapter-pg pg \
-  prisma-session-store multer \
-  @supabase/supabase-js dotenv
+```
+User
+  id, username, password, createdAt
+  → has many Folders
+  → has many Files
 
-npm install --save-dev prisma
+Folder
+  id, name, createdAt, userId, parentId (nullable)
+  → belongs to User
+  → belongs to parent Folder (optional)
+  → has many child Folders
+  → has many Files
+  → has one Share (optional)
+
+File
+  id, name, size, mimeType, url, storagePath, uploadedAt, folderId, userId
+
+Share
+  id, token (UUID), expiresAt, folderId (unique)
+
+Session
+  id, sid, data, expiresAt
 ```
 
 ---
 
 ## Environment Variables
 
-```
-DATABASE_URL=postgresql://...
+Create a `.env` file in the project root:
+
+```env
+DATABASE_URL=your_postgresql_connection_string
+
 NODE_ENV=development
-SESSION_SECRET=
-SUPABASE_URL=
-SUPABASE_ANON_KEY=
+
+SESSION_SECRET=your_session_secret
+
+SUPABASE_URL=your_supabase_project_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
 ---
 
-## lib/prisma.js (ESM singleton — locked pattern)
+## Installation & Setup
 
-```js
-import "dotenv/config";
-import { PrismaPg } from "@prisma/adapter-pg";
-import { PrismaClient } from "../generated/prisma/client.js";
-
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
-const prisma = new PrismaClient({ adapter });
-
-export { prisma };
+```bash
+git clone https://github.com/xsupremeyx/cloudVault.git
+cd cloudVault
+npm install
 ```
 
----
+Generate the Prisma client:
 
-## app.js Auth + Session Setup (Established Pattern)
-
-```js
-import { PrismaSessionStore } from "@quixo3/prisma-session-store";
-import { prisma } from "./lib/prisma.js";
-
-app.use(session({
-  store: new PrismaSessionStore(prisma, {
-    checkPeriod: 2 * 60 * 1000,   // prune expired sessions every 2min
-    dbRecordIdIsSessionId: true,
-  }),
-  secret: process.env.SESSION_SECRET,
-  resave: false,
-  saveUninitialized: false,
-  cookie: { maxAge: 30 * 24 * 60 * 60 * 1000 },
-}));
-app.use(passport.session());
-app.use(flash());
+```bash
+npx prisma generate
 ```
 
-> Note: `prisma-session-store` package name on npm is `@quixo3/prisma-session-store`. Uses the Prisma client directly — no separate `Session` model needed; it manages its own table.
+Run database migrations:
 
----
-
-## Build Phases (in order)
-
-1. **Setup** — init project, install deps, `app.js` skeleton, Prisma schema, `npx prisma db push`
-2. **Auth** — sign-up, log-in, log-out, session store, `ensureLoggedIn` middleware
-3. **Folders CRUD** — dashboard, create, view, rename, delete (no files yet)
-4. **File upload (local)** — multer to `uploads/`, save metadata to DB, skip Supabase URL for now
-5. **File detail + download** — detail view, download route (stream from local `uploads/`)
-6. **Supabase Storage** — swap multer disk storage for Supabase upload, store public URL, update download to redirect
-7. **Validation** — file type whitelist, size limit (in multer config + express-validator)
-8. **Share links** — POST creates `Share` row with UUID token + expiry, GET `/share/:token` checks expiry and renders read-only folder view
-
----
-
-## Ownership Rules
-- All folder/file queries must include `WHERE userId = req.user.id` — users only see their own data
-- `ensureLoggedIn` on all routes except `/sign-up`, `/log-in`, `/share/:token`
-- Ownership check before every mutating action (edit/delete) — never trust URL param alone
-
----
-
-## CSS Architecture (same order as previous projects)
-1. `@import` Fira Code
-2. `:root` variables
-3. Reset
-4. Base
-5. Navbar
-6. Dashboard / folder grid
-7. File cards
-8. Forms + validation errors
-9. File detail
-10. Share view
-11. Footer
-12. `@media` breakpoints (860px / 640px / 480px)
-
----
-
-## Multer Config Reference
-
-```js
-// Phase 4 — local disk
-const storage = multer.diskStorage({
-  destination: "uploads/",
-  filename: (req, file, cb) => cb(null, `${Date.now()}-${file.originalname}`),
-});
-
-// Phase 7 — add limits + fileFilter
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
-  fileFilter: (req, file, cb) => {
-    const allowed = ["image/jpeg","image/png","image/gif","application/pdf","text/plain"];
-    allowed.includes(file.mimetype) ? cb(null, true) : cb(new Error("File type not allowed"));
-  },
-});
+```bash
+npx prisma migrate deploy
 ```
 
----
+Start the development server:
 
-## Supabase Storage Pattern (Phase 6)
-
-```js
-// lib/supabase.js
-import { createClient } from "@supabase/supabase-js";
-export const supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-
-// Upload
-const { data, error } = await supabase.storage
-  .from("cloudvault")
-  .upload(`${userId}/${Date.now()}-${filename}`, fileBuffer, { contentType: mimeType });
-
-// Public URL
-const { data: { publicUrl } } = supabase.storage.from("cloudvault").getPublicUrl(data.path);
-
-// Delete
-await supabase.storage.from("cloudvault").remove([storedPath]);
+```bash
+npm run dev
 ```
 
-> Save `data.path` in DB alongside `url` so you can delete the file later.
+Start the production server:
+
+```bash
+npm start
+```
+
+The app runs on `http://localhost:3000` by default.
 
 ---
 
-## Share Link Pattern (Phase 8)
+## Validation Rules
 
-- `POST /folders/:id/share` — takes `days` from body, computes `expiresAt = now + days`, upserts `Share` record, returns token URL
-- `GET /share/:token` — finds `Share` by token, checks `expiresAt > now`, renders `share.ejs` with folder + files (read-only, no auth required)
-- Token is a UUID generated by Prisma `@default(uuid())` — no manual UUID package needed
+**Username:** 3–30 characters, letters/numbers/underscores only, case-insensitive uniqueness check
+
+**Password:** minimum 8 characters, at least one letter, at least one number, no spaces
+
+**Folder name:** 1–50 characters, trimmed, no duplicate sibling names per user
+
+**File upload:** maximum 10 MB, allowed types: `image/jpeg`, `image/png`, `image/webp`, `application/pdf`, `text/plain`
 
 ---
 
-## Deployment Checklist
-- [ ] `"type": "module"` in package.json
-- [ ] `"start": "node app.js"` in package.json scripts
-- [ ] `generated/` in `.gitignore`, `uploads/` in `.gitignore`
-- [ ] All env vars set in Render: `DATABASE_URL`, `NODE_ENV=production`, `SESSION_SECRET`, `SUPABASE_URL`, `SUPABASE_ANON_KEY`
-- [ ] `npx prisma db push` run against production DB before first deploy
-- [ ] Supabase bucket set to public (for direct URL access)
-- [ ] `process.env.PORT || 3000` in app.js
+## Deployment
+
+The application is deployed on **Render** with the database and storage hosted on **Supabase**.
+
+The `postinstall` script runs `prisma generate` automatically on deploy.
+
+Production cookies are set with `secure: true` when `NODE_ENV=production`.
+
+---
+
+## Known Limitations / Future Work
+
+- No signed URLs — files are stored in a public Supabase bucket
+- No drag-and-drop upload interface
+- No file previews (images, PDFs)
+- No search or filter within folders
+- No user storage quotas
+- Share link expiration is fixed at 7 days (not configurable per link)
+- No share link revocation without regenerating
+
+---
+
+## License
+
+ISC
