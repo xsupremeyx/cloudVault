@@ -2,7 +2,7 @@ const { Router } = require("express");
 const authRouter = Router();
 
 const authController = require("../controllers/authController");
-const { validateSignUp, validateLogIn } = require("../middleware/validate");
+const { validateSignUp, validateLogIn } = require("../middleware/validators/authValidators");
 
 authRouter.post("/log-out", authController.postLogOut);
 

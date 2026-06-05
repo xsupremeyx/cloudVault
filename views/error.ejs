@@ -1,0 +1,17 @@
+<%- include("partials/header", { title: "Error" }) %>
+
+<h1>Something went wrong</h1>
+
+<% if (status === 404) { %>
+    <p>The page you requested could not be found.</p>
+<% } else if (status === 410) { %>
+    <p>This share link has expired.</p>
+<% } else { %>
+    <p>An unexpected error occurred.</p>
+<% } %>
+
+<p>
+    <a href="/">Go Home</a>
+</p>
+
+<%- include("partials/footer") %>

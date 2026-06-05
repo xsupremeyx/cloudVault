@@ -3,6 +3,8 @@ const { validationResult } = require("express-validator");
 const { formatFileSize } = require("../utils/formatFileSize");
 const storage = require("../lib/storage");
 
+const { buildBreadcrumbs, getDescendantFolderIds } = require("../utils/folderTree");
+
 async function createFolder(req, res, next) {
     try {
         const errors = validationResult(req);
@@ -22,14 +24,22 @@ async function createFolder(req, res, next) {
                         children: true,
                         parent: true,
                         files: true,
+                        share: true,
                     },
                 });
 
                 const breadcrumbs = await buildBreadcrumbs(folder);
+                let shareUrl = null;
+
+                if (folder.share) {
+                    shareUrl =
+                        `${req.protocol}://${req.get("host")}/share/${folder.share.token}`;
+                }
 
                 return res.status(400).render("folder", {
                     folder,
                     breadcrumbs,
+                    shareUrl,
                     errors: errors.array(),
                     data: req.body,
                     formType: "childFolder",
@@ -152,6 +162,7 @@ async function renameFolder(req, res, next) {
                     children: true,
                     parent: true,
                     files: true,
+                    share: true,
                 },
             });
             folder.files.forEach(file => {
@@ -159,10 +170,17 @@ async function renameFolder(req, res, next) {
             });
 
             const breadcrumbs = await buildBreadcrumbs(folder);
+            let shareUrl = null;
+
+            if (folder.share) {
+                shareUrl =
+                    `${req.protocol}://${req.get("host")}/share/${folder.share.token}`;
+            }
 
             return res.status(400).render("folder", {
                 folder,
                 breadcrumbs,
+                shareUrl,
                 errors: errors.array(),
                 data: req.body,
                 formType: "rename",
@@ -261,52 +279,6 @@ async function deleteFolder(req, res, next) {
     }
 }
 
-async function buildBreadcrumbs(folder) {
-    const breadcrumbs = [];
-    let currentFolder = folder;
-    while (currentFolder) {
-        // add current folder to breadcrumbs
-        breadcrumbs.push({
-            id: currentFolder.id,
-            name: currentFolder.name,
-        });
-        // stop if root
-        if (!currentFolder.parentId) {
-            break;
-        }
-        // fetch parent folder
-        const parentFolder = await prisma.folder.findUnique({
-            where: {
-                id: currentFolder.parentId,
-            },
-        });
-        // move up one level
-        currentFolder = parentFolder;
-    }
-    // reverse to get correct order
-    return breadcrumbs.reverse();
-}
-
-
-async function getDescendantFolderIds(folderId) {
-    const ids = [folderId];
-
-    const children = await prisma.folder.findMany({
-        where: {
-            parentId: folderId,
-        },
-        select: {
-            id: true,
-        },
-    });
-
-    for (const child of children) {
-        const childIds = await getDescendantFolderIds(child.id);
-        ids.push(...childIds);
-    }
-
-    return ids;
-}
 
 module.exports = {
     createFolder,

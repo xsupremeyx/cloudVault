@@ -3,7 +3,7 @@ const folderRouter = Router();
 const { ensureAuthenticated } = require("../../middleware/authMiddleware");
 const { uploadSingleFile } = require("../../middleware/uploadMiddleware");
 
-const { validateFolder } = require("../../middleware/validate");
+const { validateFolder } = require("../../middleware/validators/folderValidators");
 
 const folderController = require("../../controllers/folderController");
 const fileController = require("../../controllers/fileController");
