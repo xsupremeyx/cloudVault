@@ -217,14 +217,15 @@
           <p class="card-subtitle">Permanently removes this folder and all its contents.</p>
         </div>
         <form action="/folders/<%= folder.id %>/delete" method="POST">
-          <button
-            type="submit"
-            class="btn btn-danger btn-sm"
-            onclick="return confirm('Delete this folder and all its contents?')"
-          >
-            Delete Folder
-          </button>
-        </form>
+            <button
+                type="button"
+                class="btn btn-danger btn-sm delete-trigger"
+                data-title="Delete Folder?"
+                data-message="This folder, all subfolders, and all files inside it will be permanently removed."
+            >
+                Delete Folder
+            </button>
+            </form>
       </div>
 
       <div class="card">
@@ -423,6 +424,8 @@
                           <a
                             href="/folders/files/<%= file.id %>/download"
                             class="btn btn-secondary btn-sm"
+                            target="_blank"
+                            rel="noopener noreferrer"
                             aria-label="Download <%= file.name %>"
                           >
                             <i data-lucide="download" style="width:13px;height:13px;" aria-hidden="true"></i>
@@ -430,15 +433,16 @@
                           </a>
                           <form action="/folders/files/<%= file.id %>/delete" method="POST" style="margin: 0; padding: 0;">
                             <button
-                              type="submit"
-                              class="btn btn-danger btn-sm"
-                              onclick="return confirm('Delete this file?')"
-                              aria-label="Delete <%= file.name %>"
+                                type="button"
+                                class="btn btn-danger btn-sm delete-trigger"
+                                data-title="Delete File?"
+                                data-message="This file will be permanently removed."
+                                aria-label="Delete <%= file.name %>"
                             >
-                              <i data-lucide="trash-2" style="width:13px;height:13px;" aria-hidden="true"></i>
-                              Delete
+                                <i data-lucide="trash-2" style="width:13px;height:13px;" aria-hidden="true"></i>
+                                Delete
                             </button>
-                          </form>
+                            </form>
                         </div>
                       </td>
                     </tr>
@@ -451,9 +455,16 @@
                 <div class="card" style="padding: var(--space-4);">
                 <p style="font-weight:var(--font-semibold);font-size:var(--text-sm);margin-bottom:var(--space-3);overflow-wrap:break-word;word-break:break-all;"><%= file.name %></p>
                 <div style="display:flex;gap:var(--space-2);">
-                    <a href="/folders/files/<%= file.id %>/download" class="btn btn-secondary btn-sm">Download</a>
+                    <a href="/folders/files/<%= file.id %>/download" target="_blank" rel="noopener noreferrer" class="btn btn-secondary btn-sm">Download</a>
                     <form action="/folders/files/<%= file.id %>/delete" method="POST" style="margin:0;">
-                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Delete this file?')">Delete</button>
+                    <button
+                        type="button"
+                        class="btn btn-danger btn-sm delete-trigger"
+                        data-title="Delete File?"
+                        data-message="This file will be permanently removed."
+                    >
+                        Delete
+                    </button>
                     </form>
                 </div>
                 </div>

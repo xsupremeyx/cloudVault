@@ -856,3 +856,51 @@ tbody tr:last-child td {
     padding-inline: var(--space-2);
   }
 }
+
+/* ============================================================
+   CONFIRM MODAL
+   ============================================================ */
+
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+
+  background: rgba(15,23,42,.55);
+
+  display:flex;
+  align-items:center;
+  justify-content:center;
+
+  z-index:1000;
+  padding:var(--space-4);
+}
+
+.hidden{
+  display:none;
+}
+
+.modal{
+  width:min(420px,90vw);
+
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+
+  padding: var(--space-6);
+
+  box-shadow: var(--shadow-xl);
+}
+
+.modal h3{
+  margin-bottom: var(--space-3);
+}
+
+.modal p{
+  margin-bottom: var(--space-6);
+}
+
+.modal-actions{
+  display:flex;
+  justify-content:flex-end;
+  gap:var(--space-3);
+}
