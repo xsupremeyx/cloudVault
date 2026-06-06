@@ -1,6 +1,7 @@
 const { prisma } = require("../lib/prisma");
 const { SHARE_EXPIRATION_DAYS } = require("../config/share");
 const { buildSharedBreadcrumbs, isDescendantFolder } = require("../utils/folderTree");
+const storage = require("../lib/storage");
 
 // helper
 async function getValidShare(token) {
@@ -204,7 +205,10 @@ async function downloadSharedFile(req, res, next) {
             throw error;
         }
 
-        return res.redirect(file.url);
+        const signedUrl =
+            await storage.createSignedUrl(file.storagePath);
+
+        return res.redirect(signedUrl);
 
     } catch (error) {
         next(error);
