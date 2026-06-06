@@ -119,7 +119,10 @@ async function downloadFile(req, res, next) {
             throw error;
         }
 
-        return res.redirect(file.url);
+        const signedUrl =
+            await storage.createSignedUrl(file.storagePath);
+
+        return res.redirect(signedUrl);
     }
     catch (error) {
         next(error);
